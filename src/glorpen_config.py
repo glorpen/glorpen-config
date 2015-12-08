@@ -172,6 +172,11 @@ class Config(object):
         self.path = path
         self.spec = spec
     
+    def finalize(self):
+        self.load()
+        self.resolve()
+        return self
+    
     def load(self):
         with open(self.path, "rt") as f:
             self.data = self.spec.resolve(next(yaml.safe_load_all(f)))
