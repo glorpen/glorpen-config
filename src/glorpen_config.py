@@ -24,6 +24,22 @@ class CircularDependency(Exception):
     pass
 
 class ResolvableObject(object):
+    """Configuration value ready to be resolved.
+    
+    Callbacks are registered by calling :attr:`.on_resolve`.
+    
+    To each callback are passed:
+    
+    * currently handled value
+    
+    * :class:`.Config` instance
+    
+    By using :class:`.Config` instance you can realize value based on any other value in configuration.
+    If at any time resolver callback detects there is no value given in configuration file and we should use
+    defaults given to :class:`.Field` it should raise :class:`.UseDefaultException`.
+    
+    If value is invalid, callback should raise :class:`.ValidationError` with appropriate error message.
+    """
     
     default = None
     _resolving = False
@@ -56,6 +72,13 @@ class ResolvableObject(object):
         return v
     
 class Field(object):
+    """Single field in configuration file.
+    
+    Custom field should register own resolvers/validators/normalizers by extending :attr:`.Field.make_resolvable`.
+    
+    For handling registered callbacks, see :class:`.ResolvableObject`.
+    """
+    
     def __init__(self, default=None, allow_blank=False):
         super(Field, self).__init__()
         self.default_value = default
@@ -63,11 +86,12 @@ class Field(object):
     
     def resolve(self, v):
         r = ResolvableObject(v)
+        r.set_default(self.default_value)
         self.make_resolvable(r)
         return r
     
     def make_resolvable(self, r):
-        r.set_default(self.default_value)
+        pass
     
     def has_valid_default(self):
         if self.allow_blank:
@@ -111,7 +135,7 @@ class Dict(Field):
     def normalize(self, value, config):
         ret = {}
         for k,field in self.default_value.items():
-            ret[k] = field.resolve(value.get(k) if value else None) 
+            ret[k] = field.resolve(value.get(k) if value else None)
         return ret
 
 class String(Field):
@@ -137,7 +161,6 @@ class String(Field):
             raise UseDefaultException()
     
     def make_resolvable(self, r):
-        super(String, self).make_resolvable(r)
         r.on_resolve(self.to_string)
         r.on_resolve(self.resolve_parts)
 
