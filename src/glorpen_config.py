@@ -7,6 +7,7 @@ import os
 import sys
 import logging
 import re
+import functools
 
 try:
     import yaml
@@ -22,6 +23,17 @@ class UseDefaultException(Exception):
 
 class CircularDependency(Exception):
     pass
+
+def _memoize(fn):
+    @functools.wraps(fn)
+    def wrapper(self, *args, **kw):
+        result = fn(self, *args, **kw)
+        memo = lambda *a, **kw: result
+        memo.__name__ = fn.__name__
+        memo.__doc__ = fn.__doc__
+        self.__dict__[fn.__name__] = memo
+        return result
+    return wrapper
 
 class ResolvableObject(object):
     """Configuration value ready to be resolved.
@@ -55,6 +67,7 @@ class ResolvableObject(object):
     def set_default(self, v):
         self.default = v
     
+    @_memoize
     def resolve(self, config):
         
         if self._resolving:
