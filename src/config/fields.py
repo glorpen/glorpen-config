@@ -3,10 +3,10 @@ Created on 12 gru 2015
 
 @author: Arkadiusz Dzięgiel <arkadiusz.dziegiel@glorpen.pl>
 '''
-from .exceptions import ValidationError, UseDefaultException,\
-    CircularDependency
-import os
 import logging
+from .exceptions import ValidationError, UseDefaultException,\
+    CircularDependency, ConfigException
+import os
 import re
 
 class ResolvableObject(object):
@@ -137,12 +137,8 @@ class String(Field):
     re_part = re.compile(r'{{\s*([a-z._A-Z0-9]+)\s*}}')
     
     def resolve_parts(self, v, config):
-        if not v:
-            return v
-        
         def replace(matchobj):
             return config.get(matchobj.group(1))
-        
         return self.re_part.sub(replace, v)
     
     def to_string(self, value, config):
@@ -168,13 +164,28 @@ class Path(String):
         r.on_resolve(self.to_path)
 
 class LogLevel(Field):
+    
+    _levels = None
+    
+    def _find_levels(self):
+        if hasattr(logging, "_levelNames"):
+            return dict((n,v) for n,v in logging._levelNames.items())
+        if hasattr(logging, "_nameToLevel"):
+            return logging._nameToLevel
+        
+        raise ConfigException("Could not find logging level names")
+    
     def make_resolvable(self, r):
         r.on_resolve(self.to_level)
     
     def to_level(self, value, config):
-        levels = logging._nameToLevel.keys()
-        if value in levels:
-            return logging._nameToLevel[value]
+        if self._levels is None:
+            self._levels = self._find_levels()
+        
+        value = str(value).upper()
+        
+        if value in self._levels:
+            return self._levels[value]
         else:
-            raise ValidationError("%r not in %r" % (value, levels))
+            raise ValidationError("%r not in %r" % (value, self._levels.keys()))
     

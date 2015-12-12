@@ -30,4 +30,5 @@ setup (
   url = '',
   license = '',
   long_description= long_description,
+  #python3+
 )

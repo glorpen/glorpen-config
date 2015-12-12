@@ -29,8 +29,11 @@ class Config(object):
         self.fileobj = fileobj
         self.spec = spec
     
-    def finalize(self):
-        self.load()
+    def finalize(self, data=None):
+        if data:
+            self.load_data(data)
+        else:
+            self.load()
         self.resolve()
         return self
     
@@ -44,7 +47,10 @@ class Config(object):
     
     def load(self):
         with self._source_stream() as f:
-            self.data = self.spec.resolve(next(yaml.safe_load_all(f)))
+            self.load_data(next(yaml.safe_load_all(f)))
+    
+    def load_data(self, data):
+        self.data = self.spec.resolve(data)
     
     def _get_value(self, data):
         if isinstance(data, ResolvableObject):
