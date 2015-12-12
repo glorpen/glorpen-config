@@ -13,7 +13,9 @@ import yaml
 from .fields import ResolvableObject
 from .exceptions import CircularDependency
 
-__all__ = ["Config"]
+__all__ = ["Config", "__version__"]
+
+__version__ = "0.1"
 
 class Config(object):
     
