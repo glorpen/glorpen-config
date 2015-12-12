@@ -3,18 +3,11 @@ Created on 12 gru 2015
 
 @author: Arkadiusz Dzięgiel <arkadiusz.dziegiel@glorpen.pl>
 '''
-import functools
-
-def _memoize(fn):
-    @functools.wraps(fn)
-    def wrapper(self, *args, **kw):
-        result = fn(self, *args, **kw)
-        memo = lambda *a, **kw: result
-        memo.__name__ = fn.__name__
-        memo.__doc__ = fn.__doc__
-        self.__dict__[fn.__name__] = memo
-        return result
-    return wrapper
+from .exceptions import ValidationError, UseDefaultException,\
+    CircularDependency
+import os
+import logging
+import re
 
 class ResolvableObject(object):
     """Configuration value ready to be resolved.
@@ -48,13 +41,19 @@ class ResolvableObject(object):
     def set_default(self, v):
         self.default = v
     
-    @_memoize
     def resolve(self, config):
+        if not hasattr(self, "_resolved_value"):
+            self._resolved_value = self._do_resolve(config)
+        
+        return self._resolved_value
+    
+    def _do_resolve(self, config):
         
         if self._resolving:
             raise CircularDependency()
         
         v = self.o
+        
         try:
             self._resolving = True
             for c in self.callbacks:
@@ -63,6 +62,7 @@ class ResolvableObject(object):
             return self.default
         finally:
             self._resolving = False
+        
         return v
 
 class Field(object):

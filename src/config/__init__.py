@@ -12,6 +12,7 @@ import yaml
 
 from .fields import ResolvableObject
 from .exceptions import CircularDependency
+from contextlib import contextmanager
 
 __all__ = ["Config", "__version__"]
 
@@ -21,10 +22,11 @@ class Config(object):
     
     data = None
     
-    def __init__(self, path, spec):
+    def __init__(self, spec, filepath=None, fileobj=None):
         super(Config, self).__init__()
         
-        self.path = path
+        self.filepath = filepath
+        self.fileobj = fileobj
         self.spec = spec
     
     def finalize(self):
@@ -32,8 +34,16 @@ class Config(object):
         self.resolve()
         return self
     
+    @contextmanager
+    def _source_stream(self):
+        if self.filepath:
+            with open(self.filepath, "rt") as f:
+                yield f
+        else:
+            yield self.fileobj
+    
     def load(self):
-        with open(self.path, "rt") as f:
+        with self._source_stream() as f:
             self.data = self.spec.resolve(next(yaml.safe_load_all(f)))
     
     def _get_value(self, data):
