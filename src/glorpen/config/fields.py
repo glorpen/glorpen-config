@@ -4,7 +4,7 @@ Created on 12 gru 2015
 @author: Arkadiusz Dzięgiel <arkadiusz.dziegiel@glorpen.pl>
 '''
 import logging
-from .exceptions import ValidationError, UseDefaultException,\
+from glorpen.config.exceptions import ValidationError, UseDefaultException,\
     CircularDependency, ConfigException
 import os
 import re

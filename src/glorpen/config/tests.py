@@ -4,12 +4,12 @@ Created on 12 gru 2015
 @author: Arkadiusz Dzięgiel <arkadiusz.dziegiel@glorpen.pl>
 '''
 import unittest
-from .fields import String, Path, LogLevel, Dict
+from glorpen.config.fields import String, Path, LogLevel, Dict
 from unittest.mock import Mock
 import os
 import logging
-from .exceptions import ValidationError, CircularDependency
-from . import Config
+from glorpen.config.exceptions import ValidationError, CircularDependency
+from glorpen.config import Config
 
 class FieldsTest(unittest.TestCase):
 

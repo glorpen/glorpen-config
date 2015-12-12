@@ -10,8 +10,8 @@ import re
 import functools
 import yaml
 
-from .fields import ResolvableObject
-from .exceptions import CircularDependency
+from glorpen.config.fields import ResolvableObject
+from glorpen.config.exceptions import CircularDependency
 from contextlib import contextmanager
 
 __all__ = ["Config", "__version__"]

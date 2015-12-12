@@ -10,7 +10,7 @@ import re
 import os
 
 root_dir = os.path.realpath(os.path.dirname(__file__))
-with open("%s/src/config/__init__.py" % root_dir, "rt") as f:
+with open("%s/src/glorpen/config/__init__.py" % root_dir, "rt") as f:
     version = re.search(r'__version__\s*=\s*"([^"]+)"', f.read()).group(1)
 
 with open("%s/README.rst" % root_dir, "rt") as f:
@@ -19,8 +19,8 @@ with open("%s/README.rst" % root_dir, "rt") as f:
 setup (
   name = 'glorpenlibs_config',
   version = version,
-  packages = ["glorpen.config"],
-  package_dir = {'glorpen': 'src'},
+  packages = find_packages("src/"),
+  package_dir = {'': 'src'},
   install_requires=["pyyaml"],
   dependency_links = [],
   namespace_packages  = ["glorpen"],
@@ -39,6 +39,8 @@ setup (
     "Programming Language :: Python :: 3.3",
     "Programming Language :: Python :: 3.4",
     "Programming Language :: Python :: 3.5",
-    "Topic :: Software Development :: Libraries"
-  ]
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+  ],
+  test_suite = "glorpen.config.tests"
 )
