@@ -21,14 +21,24 @@ setup (
   version = version,
   packages = ["glorpen.config"],
   package_dir = {'glorpen': 'src'},
-  install_requires=["yaml"],
+  install_requires=["pyyaml"],
   dependency_links = [],
   namespace_packages  = ["glorpen"],
   author = 'Arkadiusz Dzięgiel',
   author_email = 'arkadiusz.dziegiel@glorpen.pl',
   description = 'Loads, validates, normalizes configuration in yaml.',
   url = '',
-  license = '',
+  license = 'GPLv3+',
   long_description= long_description,
-  #python3+
+  classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.3",
+    "Programming Language :: Python :: 3.4",
+    "Programming Language :: Python :: 3.5",
+    "Topic :: Software Development :: Libraries"
+  ]
 )
