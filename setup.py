@@ -8,6 +8,7 @@ Created on 12 gru 2015
 from setuptools import setup, find_packages
 import re
 import os
+import sys
 
 root_dir = os.path.realpath(os.path.dirname(__file__))
 with open("%s/src/glorpen/config/__init__.py" % root_dir, "rt") as f:
@@ -17,7 +18,7 @@ with open("%s/README.rst" % root_dir, "rt") as f:
     long_description = f.read()
 
 setup (
-  name = 'glorpenlibs_config',
+  name = 'glorpen-config',
   version = version,
   packages = find_packages("src/"),
   package_dir = {'': 'src'},
@@ -27,6 +28,7 @@ setup (
   author = 'Arkadiusz Dzięgiel',
   author_email = 'arkadiusz.dziegiel@glorpen.pl',
   description = 'Loads, validates, normalizes configuration in yaml.',
+  tests_require = ["mock"] if sys.hexversion <= 0x03030000 else [],
   url = '',
   license = 'GPLv3+',
   long_description= long_description,
@@ -35,7 +37,7 @@ setup (
     "Intended Audience :: Developers",
     "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 2.7",
     "Programming Language :: Python :: 3.3",
     "Programming Language :: Python :: 3.4",
     "Programming Language :: Python :: 3.5",

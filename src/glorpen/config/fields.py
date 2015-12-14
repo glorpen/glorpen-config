@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 Created on 12 gru 2015
 
@@ -184,7 +185,9 @@ class LogLevel(Field):
         
         value = str(value).upper()
         
-        if value in self._levels:
+        print(self._levels.values())
+        #TODO
+        if value in self._levels.keys():
             return self._levels[value]
         else:
             raise ValidationError("%r not in %r" % (value, self._levels.keys()))

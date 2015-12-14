@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 Created on 12 gru 2015
 
@@ -5,11 +6,16 @@ Created on 12 gru 2015
 '''
 import unittest
 from glorpen.config.fields import String, Path, LogLevel, Dict
-from unittest.mock import Mock
 import os
 import logging
 from glorpen.config.exceptions import ValidationError, CircularDependency
 from glorpen.config import Config
+
+try:
+    from unittest.mock import Mock
+except ImportError:
+    #support for python2
+    from mock import Mock
 
 class FieldsTest(unittest.TestCase):
 
@@ -41,6 +47,7 @@ class FieldsTest(unittest.TestCase):
         f = LogLevel()
         self.assertEqual(f.resolve("WARNING").resolve(c), logging.WARNING)
         
+        f.resolve("asdasd").resolve(c)
         with self.assertRaises(ValidationError):
             f.resolve("asdasd").resolve(c)
 

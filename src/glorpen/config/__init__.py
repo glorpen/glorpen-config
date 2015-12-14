@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 Created on 8 gru 2015
 
@@ -16,7 +17,7 @@ from contextlib import contextmanager
 
 __all__ = ["Config", "__version__"]
 
-__version__ = "0.1"
+__version__ = "1.0"
 
 class Config(object):
     
@@ -88,4 +89,4 @@ class Config(object):
                 d = d.get(i)
             return self._get_value(d)
         except CircularDependency:
-            raise CircularDependency("Circular dependency at %r" % p) from None
+            raise CircularDependency("Circular dependency at %r" % p)
