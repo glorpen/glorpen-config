@@ -17,7 +17,7 @@ from contextlib import contextmanager
 
 __all__ = ["Config", "__version__"]
 
-__version__ = "1.0"
+__version__ = "1.0.1"
 
 class Config(object):
     
@@ -31,6 +31,11 @@ class Config(object):
         self.spec = spec
     
     def finalize(self, data=None):
+        """Load and resolve configuration in one go.
+        
+        If data argument is given source specified in constructor will not be read.
+        """
+        
         if data:
             self.load_data(data)
         else:
@@ -47,10 +52,12 @@ class Config(object):
             yield self.fileobj
     
     def load(self):
+        """Reads source specified in constructor."""
         with self._source_stream() as f:
             self.load_data(next(yaml.safe_load_all(f)))
     
     def load_data(self, data):
+        """Loads given data as source."""
         self.data = self.spec.resolve(data)
     
     def _get_value(self, data):
@@ -70,10 +77,12 @@ class Config(object):
         return self._get_value(data)
     
     def resolve(self):
+        """Visits all values and converts them to normalized form."""
         self.data = self.data.resolve(self)
         self.data = self._visit_all(self.data)
     
     def get(self, p):
+        """Gets value from config. To get value under `some_key` use dotted notation: `some_key.value`."""
         d = self.data
         
         if isinstance(p, str):

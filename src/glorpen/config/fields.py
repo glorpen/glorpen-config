@@ -173,6 +173,7 @@ class Path(String):
         r.on_resolve(self.to_path)
 
 class PathObj(Path):
+    """Path as pathlib.Path object"""
     def to_obj(self, value, config):
         import pathlib
         return pathlib.Path(value)
@@ -206,15 +207,3 @@ class LogLevel(Field):
             return self._levels[value]
         else:
             raise ValidationError("%r not in %r" % (value, self._levels.keys()))
-    
-
-
-"""
-
-- wczytanie yamla
-- interpolacja wartości
-- walidacja + normalizacja
-
-- denormalize: konwersja znormalizowanej postaci do stringa, dla interpolacji
-
-"""
