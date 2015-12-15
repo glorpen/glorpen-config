@@ -22,7 +22,7 @@ class FieldsTest(unittest.TestCase):
     def testString(self):
         c = Mock()
         
-        f = String()
+        f = String(allow_blank=True)
         ret = f.resolve("asd")
         
         self.assertEqual(ret.resolve(c), "asd")
@@ -34,6 +34,16 @@ class FieldsTest(unittest.TestCase):
         ret = f.resolve("a{{something}}a")
         self.assertEqual(ret.resolve(c), "aqwea")
         c.get.assert_called_once_with("something")
+    
+    def testStringDefaultInterpolation(self):
+        c = Config(spec=Dict(
+            a=String(default="letter a"),
+            aa=String(default="a {{a}}")
+        ))
+        c.load_data({})
+        c.resolve()
+        
+        self.assertEqual(c.get("aa"), "a letter a")
     
     def testPath(self):
         c = Mock()

@@ -5,8 +5,7 @@ Created on 12 gru 2015
 @author: Arkadiusz Dzięgiel <arkadiusz.dziegiel@glorpen.pl>
 '''
 import logging
-from glorpen.config.exceptions import ValidationError, UseDefaultException,\
-    CircularDependency, ConfigException
+from glorpen.config.exceptions import ValidationError, CircularDependency, ConfigException
 import os
 import re
 
@@ -28,7 +27,6 @@ class ResolvableObject(object):
     If value is invalid, callback should raise :class:`.ValidationError` with appropriate error message.
     """
     
-    default = None
     _resolving = False
     
     def __init__(self, o):
@@ -38,9 +36,6 @@ class ResolvableObject(object):
     
     def on_resolve(self, f):
         self.callbacks.append(f)
-    
-    def set_default(self, v):
-        self.default = v
     
     def resolve(self, config):
         if not hasattr(self, "_resolved_value"):
@@ -55,14 +50,10 @@ class ResolvableObject(object):
         
         v = self.o
         
-        try:
-            self._resolving = True
-            for c in self.callbacks:
-                v = c(v, config)
-        except UseDefaultException:
-            return self.default
-        finally:
-            self._resolving = False
+        self._resolving = True
+        for c in self.callbacks:
+            v = c(v, config)
+        self._resolving = False
         
         return v
 
@@ -80,8 +71,13 @@ class Field(object):
         self.allow_blank = allow_blank
     
     def resolve(self, v):
+        if not self.allow_blank and v is None:
+            if self.has_valid_default():
+                v = self.denormalize(self.default_value)
+            else:
+                raise ValidationError("Blank value is not allowed.")
+        
         r = ResolvableObject(v)
-        r.set_default(self.default_value)
         self.make_resolvable(r)
         return r
     
@@ -96,6 +92,9 @@ class Field(object):
                 return True
             else:
                 return False
+    
+    def denormalize(self, value):
+        raise NotImplementedError()
 
 class Dict(Field):
     def __init__(self, **kwargs):
@@ -132,15 +131,23 @@ class Dict(Field):
         for k,field in self.default_value.items():
             ret[k] = field.resolve(value.get(k) if value else None)
         return ret
+    
+    def denormalize(self, _dummy):
+        #TODO: tests
+        ret = {}
+        for k,v in self.default_value.items():
+            ret[k] = v.denormalize(v.default_value)
+        return ret
 
 class String(Field):
     
     re_part = re.compile(r'{{\s*([a-z._A-Z0-9]+)\s*}}')
     
-    def resolve_parts(self, v, config):
-        def replace(matchobj):
-            return config.get(matchobj.group(1))
-        return self.re_part.sub(replace, v)
+    def resolve_parts(self, value, config):
+        if value:
+            def replace(matchobj):
+                return config.get(matchobj.group(1))
+            return self.re_part.sub(replace, value)
     
     def to_string(self, value, config):
         if value:
@@ -148,12 +155,13 @@ class String(Field):
                 return str(value)
             except Exception as e:
                 raise ValidationError("Could not convert %r to string, got %r" % (value, e))
-        else:
-            raise UseDefaultException()
     
     def make_resolvable(self, r):
         r.on_resolve(self.to_string)
         r.on_resolve(self.resolve_parts)
+    
+    def denormalize(self, value):
+        return str(value)
 
 class Path(String):
     
@@ -163,6 +171,15 @@ class Path(String):
     def make_resolvable(self, r):
         super(Path, self).make_resolvable(r)
         r.on_resolve(self.to_path)
+
+class PathObj(Path):
+    def to_obj(self, value, config):
+        import pathlib
+        return pathlib.Path(value)
+    
+    def make_resolvable(self, r):
+        super(PathObj, self).make_resolvable(r)
+        r.on_resolve(self.to_obj)
 
 class LogLevel(Field):
     
@@ -190,3 +207,14 @@ class LogLevel(Field):
         else:
             raise ValidationError("%r not in %r" % (value, self._levels.keys()))
     
+
+
+"""
+
+- wczytanie yamla
+- interpolacja wartości
+- walidacja + normalizacja
+
+- denormalize: konwersja znormalizowanej postaci do stringa, dla interpolacji
+
+"""

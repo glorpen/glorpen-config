@@ -11,9 +11,6 @@ class ConfigException(Exception):
 class ValidationError(ConfigException):
     pass
 
-class UseDefaultException(ConfigException):
-    pass
-
 class CircularDependency(ConfigException):
     def __init__(self, *args, **kwargs):
         self.__cause__ = None # support for python2: raise Exception() from None
