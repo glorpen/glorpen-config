@@ -29,7 +29,7 @@ setup (
   author_email = 'arkadiusz.dziegiel@glorpen.pl',
   description = 'Loads, validates, normalizes configuration in yaml.',
   tests_require = ["mock"] if sys.hexversion < 0x03030000 else [],
-  url = '',
+  url = 'https://bitbucket.org/glorpen/glorpen-config',
   license = 'GPLv3+',
   long_description= long_description,
   classifiers = [
@@ -45,5 +45,10 @@ setup (
     "Topic :: Software Development :: Libraries",
     "Topic :: Software Development :: Libraries :: Python Modules",
   ],
-  test_suite = "glorpen.config.tests"
+  test_suite = "glorpen.config.tests",
+  command_options = {
+    "bdist_wheel": {
+        "universal": ["setup.py", 1]
+    }
+  }
 )
