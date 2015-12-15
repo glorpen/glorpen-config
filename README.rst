@@ -1,5 +1,6 @@
-===================
-GlorpenLibs: Config
-===================
+==============
+glorpen.config
+==============
 
-Yaml config for your projects - with validation and normalization!
+Yaml config for your projects - with validation, interpolation and normalization!
+

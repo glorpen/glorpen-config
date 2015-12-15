@@ -47,7 +47,6 @@ class FieldsTest(unittest.TestCase):
         f = LogLevel()
         self.assertEqual(f.resolve("WARNING").resolve(c), logging.WARNING)
         
-        f.resolve("asdasd").resolve(c)
         with self.assertRaises(ValidationError):
             f.resolve("asdasd").resolve(c)
 

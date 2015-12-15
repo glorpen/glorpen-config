@@ -69,7 +69,7 @@ class ResolvableObject(object):
 class Field(object):
     """Single field in configuration file.
     
-    Custom field should register own resolvers/validators/normalizers by extending :attr:`.Field.make_resolvable`.
+    Custom fields should register own resolvers/validators/normalizers by extending :attr:`.Field.make_resolvable`.
     
     For handling registered callbacks, see :class:`.ResolvableObject`.
     """
@@ -170,7 +170,7 @@ class LogLevel(Field):
     
     def _find_levels(self):
         if hasattr(logging, "_levelNames"):
-            return dict((n,v) for n,v in logging._levelNames.items())
+            return dict((n,v) for n,v in logging._levelNames.items() if isinstance(v, int))
         if hasattr(logging, "_nameToLevel"):
             return logging._nameToLevel
         
@@ -185,8 +185,6 @@ class LogLevel(Field):
         
         value = str(value).upper()
         
-        print(self._levels.values())
-        #TODO
         if value in self._levels.keys():
             return self._levels[value]
         else:
