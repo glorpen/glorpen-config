@@ -1,6 +1,0 @@
-\.egg-info$
-^\.[a-z]*project$
-^\.settings$
-\.pyc$
-^dist$
-^build$
