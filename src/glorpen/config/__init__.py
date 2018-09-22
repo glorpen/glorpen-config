@@ -4,16 +4,8 @@ Created on 8 gru 2015
 
 @author: Arkadiusz Dzięgiel <arkadiusz.dziegiel@glorpen.pl>
 '''
-import os
-import sys
-import logging
-import re
-import functools
-import yaml
-
 from glorpen.config.fields import ResolvableObject
 from glorpen.config.exceptions import CircularDependency
-from contextlib import contextmanager
 
 __all__ = ["Config", "__version__"]
 
