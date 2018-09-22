@@ -9,6 +9,9 @@ class BaseLoader(object):
     def __init__(self, filepath=None, fileobj=None):
         super(BaseLoader, self).__init__()
         
+        self.filepath = filepath
+        self.fileobj = fileobj
+        
         self._setup()
     
     def _setup(self):
