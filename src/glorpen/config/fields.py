@@ -205,3 +205,18 @@ class LogLevel(Field):
             return self._levels[value]
         else:
             raise ValidationError("%r not in %r" % (value, self._levels.keys()))
+
+class List(Field):
+    def __init__(self, values, **kwargs):
+        super(List, self).__init__(**kwargs)
+        
+        self._values_field = values
+    
+    def make_resolvable(self, r):
+        r.on_resolve(self.normalize)
+    
+    def normalize(self, value, config):
+        ret = []
+        for v in value:
+            ret.append(self._values_field.resolve(v if v else None))
+        return ret
