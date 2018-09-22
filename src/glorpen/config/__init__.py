@@ -23,17 +23,16 @@ class Config(object):
     
     data = None
     
-    def __init__(self, spec, filepath=None, fileobj=None):
+    def __init__(self, spec, loader):
         super(Config, self).__init__()
         
-        self.filepath = filepath
-        self.fileobj = fileobj
+        self.loader = loader
         self.spec = spec
     
     def finalize(self, data=None):
         """Load and resolve configuration in one go.
         
-        If data argument is given source specified in constructor will not be read.
+        If data argument is given loader specified in constructor will not be used.
         """
         
         if data:
@@ -43,18 +42,8 @@ class Config(object):
         self.resolve()
         return self
     
-    @contextmanager
-    def _source_stream(self):
-        if self.filepath:
-            with open(self.filepath, "rt") as f:
-                yield f
-        else:
-            yield self.fileobj
-    
     def load(self):
-        """Reads source specified in constructor."""
-        with self._source_stream() as f:
-            self.load_data(next(yaml.safe_load_all(f)))
+        self.load_data(self.loader.load())
     
     def load_data(self, data):
         """Loads given data as source."""
