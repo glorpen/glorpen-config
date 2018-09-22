@@ -21,8 +21,6 @@ class ResolvableObject(object):
     * :class:`.Config` instance
     
     By using :class:`.Config` instance you can realize value based on any other value in configuration.
-    If at any time resolver callback detects there is no value given in configuration file and we should use
-    defaults given to :class:`.Field` it should raise :class:`.UseDefaultException`.
     
     If value is invalid, callback should raise :class:`.ValidationError` with appropriate error message.
     """
