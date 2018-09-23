@@ -106,16 +106,28 @@ class FieldWithDefault(Field):
         return value is None
     
 class Dict(Field):
-    def __init__(self, schema, **kwargs):
+    
+    _schema = None
+    _key_field = None
+    _value_field = None
+    
+    def __init__(self, schema=None, keys=None, values=None, **kwargs):
         super(Dict, self).__init__(**kwargs)
         
-        self._schema = schema
+        if schema is None:
+            self._key_field = keys or String()
+            self._value_field = values
+        else:
+            self._schema = schema
     
     def make_resolvable(self, r):
-        r.on_resolve(self.check_keys)
-        r.on_resolve(self.normalize)
+        if self._schema:
+            r.on_resolve(self._check_keys_with_schema)
+            r.on_resolve(self._normalize_with_schema)
+        else:
+            r.on_resolve(self._normalize)
     
-    def check_keys(self, v, config):
+    def _check_keys_with_schema(self, v, config):
         if v is None:
             v = {}
         
@@ -144,10 +156,21 @@ class Dict(Field):
         
         return v
     
-    def normalize(self, value, config):
+    def _normalize_with_schema(self, value, config):
         ret = {}
         for k,field in self._schema.items():
             ret[k] = field.resolve(value.get(k))
+        return ret
+    
+    def _normalize(self, value, config):
+        ret = {}
+        
+        if value is None:
+            return ret
+        
+        for k,v in value.items():
+            ret[self._key_field.resolve(k).resolve(config)] = self._value_field.resolve(v)
+        
         return ret
     
     def is_value_supported(self, value):
@@ -218,7 +241,7 @@ class LogLevel(FieldWithDefault):
         r.on_resolve(self.to_level)
     
     def to_level(self, value, config):
-        levels = self._get_levels()        
+        levels = self._get_levels()
         value = str(value).upper()
         
         if value in levels.keys():
