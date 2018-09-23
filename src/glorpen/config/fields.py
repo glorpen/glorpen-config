@@ -8,6 +8,7 @@ import logging
 from glorpen.config.exceptions import ValidationError, CircularDependency, ConfigException
 import os
 import re
+from collections import OrderedDict
 
 class ResolvableObject(object):
     """Configuration value ready to be resolved.
@@ -153,13 +154,13 @@ class Dict(Field):
         return value
     
     def _normalize_with_schema(self, value, config):
-        ret = {}
+        ret = OrderedDict()
         for k,field in self._schema.items():
             ret[k] = field.resolve(value.get(k))
         return ret
     
     def _normalize(self, value, config):
-        ret = {}
+        ret = OrderedDict()
         
         if value is None:
             return ret
