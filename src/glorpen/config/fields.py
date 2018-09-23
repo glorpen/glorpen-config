@@ -296,3 +296,7 @@ class Variant(FieldWithDefault):
             if f.is_value_supported(value):
                 return True
         return False
+
+class Any(FieldWithDefault):
+    def is_value_supported(self, value):
+        return True
