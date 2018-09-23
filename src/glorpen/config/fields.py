@@ -63,7 +63,11 @@ class Field(object):
     For handling registered callbacks, see :class:`.ResolvableObject`.
     """
     
-    def resolve(self, v):
+    def resolve(self, v, checked=False):
+        if not checked:
+            if not self.is_value_supported(v):
+                raise ValidationError("Not supported value %r" % v)
+        
         r = ResolvableObject(v)
         self.make_resolvable(r)
         return r
@@ -72,7 +76,7 @@ class Field(object):
         pass
     
     def is_value_supported(self, value):
-        raise NotImplementedError()
+        return False
 
 class FieldWithDefault(Field):
     def __init__(self, default=None, allow_blank=False):
@@ -89,15 +93,18 @@ class FieldWithDefault(Field):
             else:
                 return False
     
-    def resolve(self, v):
+    def resolve(self, v, **kwargs):
         if not self.allow_blank and v is None:
             if self.has_valid_default():
                 v = self.default_value
             else:
                 raise ValidationError("Blank value is not allowed.")
         
-        return super(FieldWithDefault, self).resolve(v)
-
+        return super(FieldWithDefault, self).resolve(v, **kwargs)
+    
+    def is_value_supported(self, value):
+        return value is None
+    
 class Dict(Field):
     def __init__(self, schema, **kwargs):
         super(Dict, self).__init__(**kwargs)
@@ -143,6 +150,9 @@ class Dict(Field):
             ret[k] = field.resolve(value.get(k))
         return ret
     
+    def is_value_supported(self, value):
+        return isinstance(value, (dict,)) or super(Dict, self).is_value_supported(value)
+    
 class String(FieldWithDefault):
     
     re_part = re.compile(r'{{\s*([a-z._A-Z0-9]+)\s*}}')
@@ -165,7 +175,7 @@ class String(FieldWithDefault):
         r.on_resolve(self.resolve_parts)
     
     def is_value_supported(self, value):
-        return isinstance(value, (str,))
+        return isinstance(value, (str,)) or super(String, self).is_value_supported(value)
 
 class Path(String):
     
@@ -198,19 +208,26 @@ class LogLevel(FieldWithDefault):
         
         raise ConfigException("Could not find logging level names")
     
+    def _get_levels(self):
+        if self._levels is None:
+            self._levels = self._find_levels()
+        
+        return self._levels
+    
     def make_resolvable(self, r):
         r.on_resolve(self.to_level)
     
     def to_level(self, value, config):
-        if self._levels is None:
-            self._levels = self._find_levels()
-        
+        levels = self._get_levels()        
         value = str(value).upper()
         
-        if value in self._levels.keys():
-            return self._levels[value]
+        if value in levels.keys():
+            return levels[value]
         else:
-            raise ValidationError("%r not in %r" % (value, self._levels.keys()))
+            raise ValidationError("%r not in %r" % (value, levels.keys()))
+    
+    def is_value_supported(self, value):
+        return isinstance(value, (str,)) or super(LogLevel, self).is_value_supported(value)
 
 class List(FieldWithDefault):
     def __init__(self, schema, **kwargs):
@@ -228,7 +245,7 @@ class List(FieldWithDefault):
         return ret
     
     def is_value_supported(self, value):
-        return isinstance(value, (tuple, list))
+        return isinstance(value, (tuple, list)) or super(List, self).is_value_supported(value)
 
 class Variant(FieldWithDefault):
     def __init__(self, schema, **kwargs):
@@ -242,6 +259,15 @@ class Variant(FieldWithDefault):
     def normalize(self, value, config):
         for f in self._values_fields:
             if f.is_value_supported(value):
-                return f.resolve(value)
+                return f.resolve(value, checked=True)
         
         raise ValidationError("Unsupported data %r" % (value,))
+    
+    def is_value_supported(self, value):
+        if super(Variant, self).is_value_supported(value):
+            return True
+        
+        for f in self._values_fields:
+            if f.is_value_supported(value):
+                return True
+        return False
