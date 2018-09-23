@@ -63,24 +63,22 @@ class Field(object):
     For handling registered callbacks, see :class:`.ResolvableObject`.
     """
     
-    def __init__(self, default=None, allow_blank=False):
-        super(Field, self).__init__()
-        self.default_value = default
-        self.allow_blank = allow_blank
-    
     def resolve(self, v):
-        if not self.allow_blank and v is None:
-            if self.has_valid_default():
-                v = self.default_value
-            else:
-                raise ValidationError("Blank value is not allowed.")
-        
         r = ResolvableObject(v)
         self.make_resolvable(r)
         return r
     
     def make_resolvable(self, r):
         pass
+    
+    def is_value_supported(self, value):
+        raise NotImplementedError()
+
+class FieldWithDefault(Field):
+    def __init__(self, default=None, allow_blank=False):
+        super(FieldWithDefault, self).__init__()
+        self.default_value = default
+        self.allow_blank = allow_blank
     
     def has_valid_default(self):
         if self.allow_blank:
@@ -91,8 +89,14 @@ class Field(object):
             else:
                 return False
     
-    def is_value_supported(self, value):
-        raise NotImplementedError()
+    def resolve(self, v):
+        if not self.allow_blank and v is None:
+            if self.has_valid_default():
+                v = self.default_value
+            else:
+                raise ValidationError("Blank value is not allowed.")
+        
+        return super(FieldWithDefault, self).resolve(v)
 
 class Dict(Field):
     def __init__(self, schema, **kwargs):
@@ -105,12 +109,19 @@ class Dict(Field):
         r.on_resolve(self.normalize)
     
     def check_keys(self, v, config):
+        if v is None:
+            v = {}
+        
         spec_blanks = set()
         spec=set(self._schema.keys())
         val_keys = set(v.keys())
         
         for def_k,def_v in self._schema.items():
-            if def_v.has_valid_default():
+            try:
+                if def_v.has_valid_default():
+                    spec_blanks.add(def_k)
+                    continue
+            except AttributeError:
                 spec_blanks.add(def_k)
                 continue
         
@@ -129,10 +140,10 @@ class Dict(Field):
     def normalize(self, value, config):
         ret = {}
         for k,field in self._schema.items():
-            ret[k] = field.resolve(value.get(k) if value else None)
+            ret[k] = field.resolve(value.get(k))
         return ret
     
-class String(Field):
+class String(FieldWithDefault):
     
     re_part = re.compile(r'{{\s*([a-z._A-Z0-9]+)\s*}}')
     
@@ -175,7 +186,7 @@ class PathObj(Path):
         super(PathObj, self).make_resolvable(r)
         r.on_resolve(self.to_obj)
 
-class LogLevel(Field):
+class LogLevel(FieldWithDefault):
     
     _levels = None
     
@@ -201,7 +212,7 @@ class LogLevel(Field):
         else:
             raise ValidationError("%r not in %r" % (value, self._levels.keys()))
 
-class List(Field):
+class List(FieldWithDefault):
     def __init__(self, schema, **kwargs):
         super(List, self).__init__(**kwargs)
         
@@ -219,7 +230,7 @@ class List(Field):
     def is_value_supported(self, value):
         return isinstance(value, (tuple, list))
 
-class Variant(Field):
+class Variant(FieldWithDefault):
     def __init__(self, schema, **kwargs):
         super(Variant, self).__init__(**kwargs)
         
