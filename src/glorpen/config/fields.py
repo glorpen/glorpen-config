@@ -87,13 +87,7 @@ class FieldWithDefault(Field):
         self.allow_blank = allow_blank
     
     def has_valid_default(self):
-        if self.allow_blank:
-            return True
-        else:
-            if self.default_value is _UnsetValue:
-                return False
-            else:
-                return True
+        return self.default_value is not _UnsetValue
     
     def resolve(self, v, **kwargs):
         if not self.allow_blank and v is None:
@@ -129,17 +123,17 @@ class Dict(Field):
         else:
             r.on_resolve(self._normalize)
     
-    def _check_keys_with_schema(self, v, config):
-        if v is None:
-            v = {}
+    def _check_keys_with_schema(self, value, config):
+        if value is None:
+            value = {}
         
         spec_blanks = set()
         spec=set(self._schema.keys())
-        val_keys = set(v.keys())
+        val_keys = set(value.keys())
         
         for def_k, def_v in self._schema.items():
             try:
-                if def_v.has_valid_default():
+                if def_v.allow_blank or def_v.has_valid_default():
                     spec_blanks.add(def_k)
                     continue
             except AttributeError:
@@ -156,7 +150,7 @@ class Dict(Field):
                 msgs.append("excess keys %r" % diff_new)
             raise ValidationError("Found following errors: %s" % ", ".join(msgs))
         
-        return v
+        return value
     
     def _normalize_with_schema(self, value, config):
         ret = {}
