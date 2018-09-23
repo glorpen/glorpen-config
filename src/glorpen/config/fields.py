@@ -78,8 +78,10 @@ class Field(object):
     def is_value_supported(self, value):
         return False
 
+class _UnsetValue(): pass
+
 class FieldWithDefault(Field):
-    def __init__(self, default=None, allow_blank=False):
+    def __init__(self, default=_UnsetValue, allow_blank=False):
         super(FieldWithDefault, self).__init__()
         self.default_value = default
         self.allow_blank = allow_blank
@@ -88,10 +90,10 @@ class FieldWithDefault(Field):
         if self.allow_blank:
             return True
         else:
-            if self.default_value:
-                return True
-            else:
+            if self.default_value is _UnsetValue:
                 return False
+            else:
+                return True
     
     def resolve(self, v, **kwargs):
         if not self.allow_blank and v is None:
@@ -135,7 +137,7 @@ class Dict(Field):
         spec=set(self._schema.keys())
         val_keys = set(v.keys())
         
-        for def_k,def_v in self._schema.items():
+        for def_k, def_v in self._schema.items():
             try:
                 if def_v.has_valid_default():
                     spec_blanks.add(def_k)
@@ -174,7 +176,7 @@ class Dict(Field):
         return ret
     
     def is_value_supported(self, value):
-        return isinstance(value, (dict,)) or super(Dict, self).is_value_supported(value)
+        return value is None or isinstance(value, (dict,)) or super(Dict, self).is_value_supported(value)
     
 class String(FieldWithDefault):
     
