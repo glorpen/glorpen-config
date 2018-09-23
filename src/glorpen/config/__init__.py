@@ -15,11 +15,12 @@ class Config(object):
     
     data = None
     
-    def __init__(self, spec, loader):
+    def __init__(self, spec, loader, split_character='.'):
         super(Config, self).__init__()
         
         self.loader = loader
         self.spec = spec
+        self.split_character = split_character
     
     def finalize(self, data=None):
         """Load and resolve configuration in one go.
@@ -63,11 +64,11 @@ class Config(object):
         self.data = self._visit_all(self.data)
     
     def get(self, p):
-        """Gets value from config. To get value under `some_key` use dotted notation: `some_key.value`."""
+        """Gets value from config. To get value under `some_key` use dotted notation: `some_key.value` (defaults)."""
         d = self.data
         
         if isinstance(p, str):
-            parts = p.split(".")
+            parts = p.split(self.split_character)
         else:
             parts = p
         
