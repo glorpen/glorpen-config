@@ -295,3 +295,20 @@ class Variant(FieldWithDefault):
 class Any(FieldWithDefault):
     def is_value_supported(self, value):
         return True
+
+class Number(FieldWithDefault):
+    #TODO: float, deciaml points
+    def is_value_supported(self, value):
+        try:
+            int(value)
+        except (ValueError, TypeError):
+            return super(Number, self).is_value_supported(value)
+        
+        return True
+    
+    def make_resolvable(self, r):
+        r.on_resolve(self._normalize)
+    
+    def _normalize(self, value, config):
+        if value is not None:
+            return int(value)
