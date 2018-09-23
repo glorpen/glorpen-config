@@ -71,7 +71,7 @@ class Field(object):
     def resolve(self, v):
         if not self.allow_blank and v is None:
             if self.has_valid_default():
-                v = self.denormalize(self.default_value)
+                v = self.default_value
             else:
                 raise ValidationError("Blank value is not allowed.")
         
@@ -91,12 +91,14 @@ class Field(object):
             else:
                 return False
     
-    def denormalize(self, value):
+    def is_value_supported(self, value):
         raise NotImplementedError()
 
 class Dict(Field):
-    def __init__(self, **kwargs):
-        super(Dict, self).__init__(default=kwargs)
+    def __init__(self, schema, **kwargs):
+        super(Dict, self).__init__(**kwargs)
+        
+        self._schema = schema
     
     def make_resolvable(self, r):
         r.on_resolve(self.check_keys)
@@ -104,10 +106,10 @@ class Dict(Field):
     
     def check_keys(self, v, config):
         spec_blanks = set()
-        spec=set(self.default_value.keys())
+        spec=set(self._schema.keys())
         val_keys = set(v.keys())
         
-        for def_k,def_v in self.default_value.items():
+        for def_k,def_v in self._schema.items():
             if def_v.has_valid_default():
                 spec_blanks.add(def_k)
                 continue
@@ -126,17 +128,10 @@ class Dict(Field):
     
     def normalize(self, value, config):
         ret = {}
-        for k,field in self.default_value.items():
+        for k,field in self._schema.items():
             ret[k] = field.resolve(value.get(k) if value else None)
         return ret
     
-    def denormalize(self, _dummy):
-        #TODO: tests
-        ret = {}
-        for k,v in self.default_value.items():
-            ret[k] = v.denormalize(v.default_value)
-        return ret
-
 class String(Field):
     
     re_part = re.compile(r'{{\s*([a-z._A-Z0-9]+)\s*}}')
@@ -158,8 +153,8 @@ class String(Field):
         r.on_resolve(self.to_string)
         r.on_resolve(self.resolve_parts)
     
-    def denormalize(self, value):
-        return str(value)
+    def is_value_supported(self, value):
+        return isinstance(value, (str,))
 
 class Path(String):
     
@@ -207,10 +202,10 @@ class LogLevel(Field):
             raise ValidationError("%r not in %r" % (value, self._levels.keys()))
 
 class List(Field):
-    def __init__(self, values, **kwargs):
+    def __init__(self, schema, **kwargs):
         super(List, self).__init__(**kwargs)
         
-        self._values_field = values
+        self._values_field = schema
     
     def make_resolvable(self, r):
         r.on_resolve(self.normalize)
@@ -220,3 +215,22 @@ class List(Field):
         for v in value:
             ret.append(self._values_field.resolve(v if v else None))
         return ret
+    
+    def is_value_supported(self, value):
+        return isinstance(value, (tuple, list))
+
+class Variant(Field):
+    def __init__(self, schema, **kwargs):
+        super(Variant, self).__init__(**kwargs)
+        
+        self._values_fields = schema
+    
+    def make_resolvable(self, r):
+        r.on_resolve(self.normalize)
+    
+    def normalize(self, value, config):
+        for f in self._values_fields:
+            if f.is_value_supported(value):
+                return f.resolve(value)
+        
+        raise ValidationError("Unsupported data %r" % (value,))
