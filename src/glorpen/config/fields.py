@@ -9,6 +9,19 @@ from glorpen.config.exceptions import ValidationError, CircularDependency, Confi
 import os
 import re
 from collections import OrderedDict
+import contextlib
+
+@contextlib.contextmanager
+def path_validation_error(path):
+    
+    if not isinstance(path, (list)):
+        path = [path]
+    
+    try:
+        yield
+    except ValidationError as e:
+        e._partial_path = path
+        raise e
 
 class ResolvableObject(object):
     """Configuration value ready to be resolved.
@@ -156,7 +169,8 @@ class Dict(Field):
     def _normalize_with_schema(self, value, config):
         ret = OrderedDict()
         for k,field in self._schema.items():
-            ret[k] = field.resolve(value.get(k))
+            with path_validation_error([k]):
+                ret[k] = field.resolve(value.get(k))
         return ret
     
     def _normalize(self, value, config):
@@ -166,7 +180,8 @@ class Dict(Field):
             return ret
         
         for k,v in value.items():
-            ret[self._key_field.resolve(k).resolve(config)] = self._value_field.resolve(v)
+            with path_validation_error(k):
+                ret[self._key_field.resolve(k).resolve(config)] = self._value_field.resolve(v)
         
         return ret
     
@@ -260,8 +275,9 @@ class List(FieldWithDefault):
     
     def normalize(self, value, config):
         ret = []
-        for v in value:
-            ret.append(self._values_field.resolve(v if v else None))
+        for i, v in enumerate(value):
+            with path_validation_error(i):
+                ret.append(self._values_field.resolve(v if v else None))
         return ret
     
     def is_value_supported(self, value):

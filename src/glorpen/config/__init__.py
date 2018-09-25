@@ -6,10 +6,21 @@ Created on 8 gru 2015
 '''
 from glorpen.config.fields import ResolvableObject
 from glorpen.config.exceptions import CircularDependency
+from collections import OrderedDict
+from glorpen.config import exceptions
+import contextlib
 
 __all__ = ["Config", "__version__"]
 
 __version__ = "1.0.1"
+
+@contextlib.contextmanager
+def readable_validation_error(resolve_path):
+    try:
+        yield
+    except exceptions.ValidationError as e:
+        full_path = resolve_path + e._partial_path
+        raise exceptions.PathValidationError(e, ".".join(repr(i) for i in full_path)) from e
 
 class Config(object):
     
@@ -42,21 +53,30 @@ class Config(object):
         """Loads given data as source."""
         self.data = self.spec.resolve(data)
     
-    def _get_value(self, data):
+    def _get_value(self, data, resolve_path=None):
         if isinstance(data, ResolvableObject):
-            return self._visit_all(data.resolve(self))
+            return self._visit_all(data.resolve(self), resolve_path)
         else:
             return data
     
-    def _visit_all(self, data):
+    def _visit_all(self, data, resolve_path=None):
+        
+        if not resolve_path:
+            resolve_path = []
         
         if isinstance(data, dict):
-            return dict([k, self._visit_all(v)] for k,v in data.items())
+            ret = OrderedDict()
+            for k,v in data.items():
+                my_path = resolve_path + [k]
+                with readable_validation_error(my_path):
+                    ret[k] = self._visit_all(v, my_path)
+            
+            return ret
         
         if isinstance(data, list):
-            return [self._visit_all(i) for i in data]
+            return [self._visit_all(v, resolve_path + [i]) for i,v in enumerate(data)]
         
-        return self._get_value(data)
+        return self._get_value(data, resolve_path)
     
     def resolve(self):
         """Visits all values and converts them to normalized form."""
