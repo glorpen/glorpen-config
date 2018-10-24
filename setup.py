@@ -5,7 +5,7 @@ Created on 12 gru 2015
 @author: Arkadiusz Dzięgiel <arkadiusz.dziegiel@glorpen.pl>
 '''
 
-from setuptools import setup, find_packages
+from setuptools import setup
 import re
 import os
 import sys
@@ -20,7 +20,7 @@ with open("%s/README.rst" % root_dir, "rt") as f:
 setup (
   name = 'glorpen-config',
   version = version,
-  packages = find_packages("src/"),
+  packages = ["glorpen.config"],
   package_dir = {'': 'src'},
   install_requires=["pyyaml"],
   dependency_links = [],
