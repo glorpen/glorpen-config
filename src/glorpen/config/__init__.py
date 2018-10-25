@@ -18,7 +18,7 @@ class Config(object):
     
     data = None
     
-    def __init__(self, spec, loader, split_character='.'):
+    def __init__(self, spec, loader=None, split_character='.'):
         super(Config, self).__init__()
         
         self.loader = loader
