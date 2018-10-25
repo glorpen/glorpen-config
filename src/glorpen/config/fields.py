@@ -12,13 +12,13 @@ from collections import OrderedDict
 import contextlib
 
 def _as_list(v):
+    """Returns given object wrapped in list if not already"""
     if not isinstance(v, (list)):
         return [v]
     return v
 
 @contextlib.contextmanager
 def path_validation_error(after=None, before=None):
-    
     if after:
         after = _as_list(after)
     
@@ -39,6 +39,11 @@ def path_validation_error(after=None, before=None):
             e._partial_path = before + e._partial_path
         
         raise e
+
+def resolve(obj, config):
+    if isinstance(obj, ResolvableObject):
+        return obj.resolve(config)
+    return obj
 
 class ResolvableObject(object):
     """Configuration value ready to be resolved.
@@ -81,7 +86,7 @@ class ResolvableObject(object):
         
         self._resolving = True
         for c in self.callbacks:
-            v = c(v, config)
+            v = resolve(c(v, config), config)
         self._resolving = False
         
         return v
@@ -187,7 +192,7 @@ class Dict(Field):
         ret = OrderedDict()
         for k,field in self._schema.items():
             with path_validation_error([k]):
-                ret[k] = field.resolve(value.get(k)).resolve(config)
+                ret[k] = field.resolve(value.get(k))
         return ret
     
     def _normalize(self, value, config):
@@ -294,7 +299,7 @@ class List(FieldWithDefault):
         ret = []
         for i, v in enumerate(value):
             with path_validation_error(i):
-                ret.append(self._values_field.resolve(v if v else None).resolve(config))
+                ret.append(self._values_field.resolve(v if v else None))
         return ret
     
     def is_value_supported(self, value):
@@ -324,7 +329,7 @@ class Variant(FieldWithDefault):
     def normalize(self, value, config):
         for f in self._values_fields:
             if f.is_value_supported(value):
-                return f.resolve(value, checked=True).resolve(config)
+                return f.resolve(value, checked=True)
         
         raise ValidationError("Unsupported data %r" % (value,))
     

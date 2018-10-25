@@ -36,10 +36,10 @@ class FieldsTest(unittest.TestCase):
         c.get.assert_called_once_with("something")
     
     def testStringDefaultInterpolation(self):
-        c = Config(spec=Dict(
-            a=String(default="letter a"),
-            aa=String(default="a {{a}}")
-        ))
+        c = Config(spec=Dict({
+            "a": String(default="letter a"),
+            "aa": String(default="a {{a}}")
+        }))
         c.load_data({})
         c.resolve()
         
@@ -62,7 +62,7 @@ class FieldsTest(unittest.TestCase):
 
 class ConfigTest(unittest.TestCase):
     def testCircularDependency(self):
-        c = Config(spec=Dict(a=String()))
+        c = Config(spec=Dict({"a": String()}))
         c.load_data({"a":"a{{a}}a"})
         
         with self.assertRaises(CircularDependency):
