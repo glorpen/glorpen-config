@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 '''
-Created on 12 gru 2015
-
-@author: Arkadiusz Dzięgiel <arkadiusz.dziegiel@glorpen.pl>
+.. moduleauthor:: Arkadiusz Dzięgiel <arkadiusz.dziegiel@glorpen.pl>
 '''
 import unittest
 from glorpen.config.fields import String, Path, LogLevel, Dict

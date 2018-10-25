@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 '''
-Created on 8 gru 2015
-
-@author: Arkadiusz Dzięgiel <arkadiusz.dziegiel@glorpen.pl>
+.. moduleauthor:: Arkadiusz Dzięgiel <arkadiusz.dziegiel@glorpen.pl>
 '''
 from glorpen.config.fields import ResolvableObject, path_validation_error
 from glorpen.config.exceptions import CircularDependency
@@ -12,9 +10,10 @@ from six import raise_from
 
 __all__ = ["Config", "__version__"]
 
-__version__ = "1.0.1"
+__version__ = "2.0.0"
 
 class Config(object):
+    """Config validator and normalizer."""
     
     data = None
     

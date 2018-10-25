@@ -1,15 +1,18 @@
 ==============
-glorpen.config
+Glorpen Config
 ==============
 
 .. image:: https://travis-ci.org/glorpen/glorpen-config.svg?branch=master
+    :target: https://travis-ci.org/glorpen/glorpen-config
+.. image:: https://readthedocs.org/projects/glorpen-config/badge/?version=latest
+    :target: https://glorpen-config.readthedocs.io/en/latest/
 
-Yaml config for Your projects - with validation, interpolation and value normalization!
+Config framework for Your projects - with validation, interpolation and value normalization!
+
+Full documentation: https://glorpen-config.readthedocs.io/
 
 Official repositories
 =====================
-
-For forking and other funnies.
 
 GitHub: https://github.com/glorpen/glorpen-config
 
@@ -30,16 +33,16 @@ You can:
 Loading data
 ------------
 
-`glorpen.config.Config` class allows loading data from three sources:
+``glorpen.config.Config`` class allows loading data from three sources:
 
-- path, `filepath` constructor argument
-- file-like object, `fileobj` constructor argument
-- dict object passed to `glorpen.config.Config.load_data` or `glorpen.config.Config.finalize`.
+- path, ``filepath`` constructor argument
+- file-like object, ``fileobj`` constructor argument
+- dict object passed to ``glorpen.config.Config.load_data`` or ``glorpen.config.Config.finalize``.
 
 Interpolation
 -------------
 
-You can reuse values from config with `{{ path.to.value }}` notation, eg:
+You can reuse values from config with ``{{ path.to.value }}`` notation, eg:
 
 .. code-block:: yaml
 
@@ -47,21 +50,20 @@ You can reuse values from config with `{{ path.to.value }}` notation, eg:
       path: "/tmp"
       cache_path: "{{ project.path }}/cache"
 
-If normalized value object `MyClass('/tmp','{{project.path}}')` is `denormalized` to `/tmp:{{project.path}}`,
-after resolving configuration it will read `MyClass('/tmp','/tmp')`.
+String interpolation currently can be used only with ``glorpen.config.fields.String`` fields.
 
 Normalization and validation
 ----------------------------
 
-Each field type has own normalization rules, eg. for `fields.LogLevel`:
+Each field type has own normalization rules, eg. for ``glorpen.config.fields.LogLevel``:
 
 .. code-block:: yaml
 
    logging: DEBUG
 
-`config.get("logging")` would yield value `10` as is `logging.DEBUG`. 
+``config.get("logging")`` would yield value ``10`` as is ``logging.DEBUG``. 
 
-Additionally it will raise `exceptions.ValidationError` if invalid level name is given.
+Additionally it will raise ``glorpen.config.exceptions.ValidationError`` if invalid level name is given.
 
 Default values
 --------------
@@ -111,7 +113,7 @@ Example yaml config:
       some_path: "/tmp"
    maybe_string: 12
 
-Then you can create `Config` instance:
+Then you can create ``glorpen.config.Config`` instance:
 
 .. code-block:: python
 
@@ -126,16 +128,16 @@ Then you can create `Config` instance:
 Creating custom fields
 ======================
 
-Custom field class should extend `glorpen.config.fields.Field` or `glorpen.config.fields.FieldWithDefault`.
+Custom field class should extend ``glorpen.config.fields.Field`` or ``glorpen.config.fields.FieldWithDefault``.
 
-`Field.make_resolvable` method should register normalizer functions which later will be called in registration order.
+``glorpen.config.fields.Field.make_resolvable`` method should register normalizer functions which later will be called in registration order.
 Each value returned by normalizer is passed to next one. After chain end value is returned as config value.
 
-Returned `ResolvableObject` instance is resolved before passing it to next normalizer.
+Returned ``glorpen.config.fields.ResolvableObject`` instance is resolved before passing it to next normalizer.
 
-If value passed to normalizator is invalid it should raise `exceptions.ValidationError`.
-Sometimes value can be lazy loaded - it is represented as `ResolvableObject`.
-You can get real value by using `fields.resolve(value, config)`.
+If value passed to normalizator is invalid it should raise ``glorpen.config.exceptions.ValidationError``.
+Sometimes value can be lazy loaded - it is represented as ``glorpen.config.fields.ResolvableObject``.
+You can get real value by using ``glorpen.config.fields.resolve(value, config)``.
 
 .. code-block:: python
 

@@ -1,11 +1,13 @@
+# -*- coding: utf-8 -*-
 '''
-Created on 22 wrz 2018
+.. moduleauthor:: Arkadiusz Dzięgiel <arkadiusz.dziegiel@glorpen.pl>
+'''
 
-@author: glorpen
-'''
 from contextlib import contextmanager
 
 class BaseLoader(object):
+    """Base class for any loader."""
+    
     def __init__(self, filepath=None, fileobj=None):
         super(BaseLoader, self).__init__()
         
@@ -15,6 +17,7 @@ class BaseLoader(object):
         self._setup()
     
     def _setup(self):
+        """Extending classes can use it to setup loader."""
         pass
     
     @contextmanager
@@ -26,6 +29,7 @@ class BaseLoader(object):
             yield self.fileobj
     
     def _parse(self, data):
+        """Extending classes should overwrite this method with parsing logic."""
         raise NotImplementedError()
     
     def load(self):
@@ -34,6 +38,8 @@ class BaseLoader(object):
             return self._parse(f)
 
 class YamlLoader(BaseLoader):
+    """Reads yaml files."""
+    
     def _setup(self):
         import yaml
         self._yaml = yaml
