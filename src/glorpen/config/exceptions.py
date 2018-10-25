@@ -14,10 +14,10 @@ class ValidationError(ConfigException):
         self._partial_path = []
 
 class PathValidationError(ConfigException):
-    def __init__(self, msg, path):
-        self.path = path
+    def __init__(self, validation_error):
+        self.path = ".".join(repr(i) for i in validation_error._partial_path)
         super(PathValidationError, self).__init__(
-            "%s: %s" % (path, msg)
+            "%s: %s" % (self.path, validation_error)
         )
 
 class CircularDependency(ConfigException):

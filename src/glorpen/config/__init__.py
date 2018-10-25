@@ -4,23 +4,14 @@ Created on 8 gru 2015
 
 @author: Arkadiusz Dzięgiel <arkadiusz.dziegiel@glorpen.pl>
 '''
-from glorpen.config.fields import ResolvableObject
+from glorpen.config.fields import ResolvableObject, path_validation_error
 from glorpen.config.exceptions import CircularDependency
 from collections import OrderedDict
 from glorpen.config import exceptions
-import contextlib
 
 __all__ = ["Config", "__version__"]
 
 __version__ = "1.0.1"
-
-@contextlib.contextmanager
-def readable_validation_error(resolve_path):
-    try:
-        yield
-    except exceptions.ValidationError as e:
-        full_path = resolve_path + e._partial_path
-        raise exceptions.PathValidationError(e, ".".join(repr(i) for i in full_path)) from e
 
 class Config(object):
     
@@ -43,7 +34,9 @@ class Config(object):
             self.load_data(data)
         else:
             self.load()
+        
         self.resolve()
+        
         return self
     
     def load(self):
@@ -53,35 +46,39 @@ class Config(object):
         """Loads given data as source."""
         self.data = self.spec.resolve(data)
     
-    def _get_value(self, data, resolve_path=None):
+    def _get_value(self, data):
         if isinstance(data, ResolvableObject):
-            return self._visit_all(data.resolve(self), resolve_path)
+            return self._visit_all(data.resolve(self))
         else:
             return data
     
-    def _visit_all(self, data, resolve_path=None):
-        
-        if not resolve_path:
-            resolve_path = []
-        
+    def _visit_all(self, data):
         if isinstance(data, dict):
             ret = OrderedDict()
             for k,v in data.items():
-                my_path = resolve_path + [k]
-                with readable_validation_error(my_path):
-                    ret[k] = self._visit_all(v, my_path)
+                with path_validation_error(before=k):
+                    ret[k] = self._visit_all(v)
             
             return ret
         
         if isinstance(data, list):
-            return [self._visit_all(v, resolve_path + [i]) for i,v in enumerate(data)]
+            ret = []
+            
+            for i,v in enumerate(data):
+                with path_validation_error(before=i):
+                    ret.append(self._visit_all(v)) 
+            
+            return ret
         
-        return self._get_value(data, resolve_path)
+        return self._get_value(data)
     
     def resolve(self):
         """Visits all values and converts them to normalized form."""
         self.data = self.data.resolve(self)
-        self.data = self._visit_all(self.data)
+        try:
+            self.data = self._visit_all(self.data)
+        except exceptions.ValidationError as e:
+            raise exceptions.PathValidationError(e) from None
     
     def get(self, p):
         """Gets value from config. To get value under `some_key` use dotted notation: `some_key.value` (defaults)."""

@@ -11,16 +11,33 @@ import re
 from collections import OrderedDict
 import contextlib
 
+def _as_list(v):
+    if not isinstance(v, (list)):
+        return [v]
+    return v
+
 @contextlib.contextmanager
-def path_validation_error(path):
+def path_validation_error(after=None, before=None):
     
-    if not isinstance(path, (list)):
-        path = [path]
+    if after:
+        after = _as_list(after)
+    
+    if before:
+        before = _as_list(before)
     
     try:
         yield
     except ValidationError as e:
-        e._partial_path = path
+        
+        if not hasattr(e, "_partial_path"):
+            e._partial_path = []
+        
+        if after:
+            e._partial_path.extend(after)
+        
+        if before:
+            e._partial_path = before + e._partial_path
+        
         raise e
 
 class ResolvableObject(object):
