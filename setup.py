@@ -20,9 +20,9 @@ with open("%s/README.rst" % root_dir, "rt") as f:
 setup (
   name = 'glorpen-config',
   version = version,
-  packages = ["glorpen.config"],
+  packages = ['glorpen.config'],
   package_dir = {'': 'src'},
-  install_requires=["pyyaml"],
+  install_requires = ['six>=1.9'],
   dependency_links = [],
   namespace_packages  = ["glorpen"],
   author = 'Arkadiusz Dzięgiel',

@@ -8,6 +8,7 @@ from glorpen.config.fields import ResolvableObject, path_validation_error
 from glorpen.config.exceptions import CircularDependency
 from collections import OrderedDict
 from glorpen.config import exceptions
+from six import raise_from
 
 __all__ = ["Config", "__version__"]
 
@@ -78,7 +79,7 @@ class Config(object):
         try:
             self.data = self._visit_all(self.data)
         except exceptions.ValidationError as e:
-            raise exceptions.PathValidationError(e) from None
+            raise_from(exceptions.PathValidationError(e), None)
     
     def get(self, p):
         """Gets value from config. To get value under `some_key` use dotted notation: `some_key.value` (defaults)."""
