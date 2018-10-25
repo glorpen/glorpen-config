@@ -11,9 +11,9 @@ Official repositories
 
 For forking and other funnies.
 
-BitBucket: https://bitbucket.org/glorpen/glorpen-config
-
 GitHub: https://github.com/glorpen/glorpen-config
+
+BitBucket: https://bitbucket.org/glorpen/glorpen-config
 
 Features
 ========
@@ -83,18 +83,22 @@ Your first step should be defining configuration schema:
    
    project_path = "/tmp/project"
    
-   spec = Dict(
-      project_path = Path(default=project_path),
-      project_cache_path = Path(default="{{ project_path }}/cache"),
-      logging = Dict(
-          level = LogLevel(default=logging.INFO)
+   spec = Dict({
+      "project_path": Path(default=project_path),
+      "project_cache_path": Path(default="{{ project_path }}/cache"),
+      "logging": Dict({
+          "level": LogLevel(default=logging.INFO)
+      }),
+      "database": String(),
+      "sources": Dict(
+          "some_param": String(),
+          "some_path": Path(),
       ),
-      database = String(),
-      sources = Dict(
-          some_param = String(),
-          some_path = Path(),
-      )
-   )
+      "maybe_string": Variant([
+          String(),
+          Number()
+      ])
+   })
 
 Example yaml config:
 
@@ -105,6 +109,7 @@ Example yaml config:
    sources:
       some_param: "some param"
       some_path: "/tmp"
+   maybe_string: 12
 
 Then you can create `Config` instance:
 
@@ -116,18 +121,21 @@ Then you can create `Config` instance:
    cfg.get("project_path") #=> "/tmp/project"
    cfg.get("project_cache_path") #=> "/tmp/project/cache"
    cfg.get("logging") #=> 10
+   cfg.get("maybe_string") #=> 12
 
 Creating custom fields
 ======================
 
-Custom field class should extend `glorpen.config.fields.Field`.
+Custom field class should extend `glorpen.config.fields.Field` or `glorpen.config.fields.FieldWithDefault`.
 
 `Field.make_resolvable` method should register normalizer functions which later will be called in registration order.
 Each value returned by normalizer is passed to next one. After chain end value is returned as config value.
 
-`denormalize` method should convert field's normalized object back to string.
+Returned `ResolvableObject` instance is resolved before passing it to next normalizer.
 
 If value passed to normalizator is invalid it should raise `exceptions.ValidationError`.
+Sometimes value can be lazy loaded - it is represented as `ResolvableObject`.
+You can get real value by using `fields.resolve(value, config)`.
 
 .. code-block:: python
 
@@ -141,8 +149,8 @@ If value passed to normalizator is invalid it should raise `exceptions.Validatio
        def to_my_value(self, value, config):
            return MyValue(value)
        
-       def denormalize(self, value):
-           return value.value
+       def is_value_supported(self, value):
+           return True
        
        def make_resolvable(self, r):
            r.on_resolve(self.to_my_value)
