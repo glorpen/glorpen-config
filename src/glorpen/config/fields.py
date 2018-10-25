@@ -187,7 +187,7 @@ class Dict(Field):
         ret = OrderedDict()
         for k,field in self._schema.items():
             with path_validation_error([k]):
-                ret[k] = field.resolve(value.get(k))
+                ret[k] = field.resolve(value.get(k)).resolve(config)
         return ret
     
     def _normalize(self, value, config):
@@ -294,15 +294,27 @@ class List(FieldWithDefault):
         ret = []
         for i, v in enumerate(value):
             with path_validation_error(i):
-                ret.append(self._values_field.resolve(v if v else None))
+                ret.append(self._values_field.resolve(v if v else None).resolve(config))
         return ret
     
     def is_value_supported(self, value):
         return isinstance(value, (tuple, list)) or super(List, self).is_value_supported(value)
 
 class Variant(FieldWithDefault):
-    def __init__(self, schema, **kwargs):
-        super(Variant, self).__init__(**kwargs)
+    def __init__(self, schema):
+        allow_blank = False
+        
+        for s in schema:
+            try:
+                s_blank = s.allow_blank
+            except AttributeError:
+                continue
+            
+            if s_blank:
+                allow_blank = True
+                break
+        
+        super(Variant, self).__init__(allow_blank=allow_blank)
         
         self._values_fields = schema
     
@@ -312,7 +324,7 @@ class Variant(FieldWithDefault):
     def normalize(self, value, config):
         for f in self._values_fields:
             if f.is_value_supported(value):
-                return f.resolve(value, checked=True)
+                return f.resolve(value, checked=True).resolve(config)
         
         raise ValidationError("Unsupported data %r" % (value,))
     
