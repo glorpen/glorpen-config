@@ -11,3 +11,14 @@ install:
 
 script:
   - nosetests ./src
+
+deploy:
+  provider: pypi
+  user: glorpen
+  password:
+    secure: "TNzsLthbbspLMpL8rN3/doSWTC6pL9Yfy5SDfTugkyZeBmEusVW20KjbExMRcJp7SynG8D2q7avb7umMwqATMfs2r3KP3UDFtddssu1wZiO6JknAjtT6My5tVBg/WVTNZrqfB2A8WvIbL8gEjwhmJje1GPYeMdZk1lmCxsCqbqKBEOxzLMI0wrFFpa14aES4I6pUq2in+jTIaxnB1KRX1t7tl0uzbjEeqPupH5gHJzwRY9kTVsAWIuM/0T5ksiKE1w3Pf0UL2AhWVgr11B1Fy68g7cgq0MDTGOlJdLqcqKn+lP1xaEOUvU5gG9tvSpsY0QEADxCibc9NrQl7nNwmn9WyAnCdoU31NUiZwNYqrUyAa/bRm2qk0Oc0lBpHo0p4B0m/55jr6vdByUspm6WPsVoRk6nIdbo1xQbrzNBa9NOaN82QXnIB1+Cen0RLDVSfaVwtVrouHEiLQNPQjHkjJoTrqhJYBN/5nGjEKtpxlV6CJvmYBKNYhgD+P0ylHtWvsSeOBFUswCu53babG/GaoY9S2+HqMafyWl6hpCETFW2vtZXy9nTlGq3945+sC0VQYIvTUo7yJE0B4i2VYrKm8vTscE+rbtcnPnRLRyQ6n/tDz/Hkas7j+vPggrVFO4Z5MKpl9znj7E4fq3L8wbddLT0+2/nOCqgbEh8SH/t9fkA="
+  on:
+    tags: true
+    branch: master
+    python: '3.6'
+  distributions: "sdist bdist_wheel --universal"
