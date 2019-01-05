@@ -9,26 +9,24 @@ Your first step should be defining configuration schema:
 
 .. code-block:: python
 
-   from glorpen.config import Config
-   from glorpen.config.fields import Dict, String, Path, LogLevel
+   import logging
+   import glorpen.config.fields as f
    
    project_path = "/tmp/project"
    
-   spec = Dict({
-      "project_path": Path(default=project_path),
-      "project_cache_path": Path(default="{{ project_path }}/cache"),
-      "logging": Dict({
-          "level": LogLevel(default=logging.INFO)
-      }),
-      "database": String(),
-      "sources": Dict(
-          "some_param": String(),
-          "some_path": Path(),
-      ),
-      "maybe_string": Variant([
-          String(),
-          Number()
-      ])
+   spec = f.Dict({
+     "project_path": f.Path(default=project_path),
+     "project_cache_path": f.Path(default="{{ project_path }}/cache"),
+     "logging": f.LogLevel(default=logging.INFO),
+     "database": f.String(),
+     "sources": f.Dict({
+         "some_param": f.String(),
+         "some_path": f.Path(),
+     }),
+     "maybe_string": f.Variant([
+         f.String(),
+         f.Number()
+     ])
    })
 
 Example yaml config:
@@ -38,19 +36,23 @@ Example yaml config:
    logging: "DEBUG"
    database: "mysql://...."
    sources:
-      some_param: "some param"
-      some_path: "/tmp"
+     some_param: "some param"
+     some_path: "/tmp"
    maybe_string: 12
 
-Then you can create :class:`glorpen.config.Config` instance:
+Then you can create ``glorpen.config.Config`` instance:
 
 .. code-block:: python
 
-   cfg = Config(filepath=config_path, spec=spec).finalize()
-
-   cfg.get("sources.some_param") #=> "some param"
-   cfg.get("project_path") #=> "/tmp/project"
-   cfg.get("project_cache_path") #=> "/tmp/project/cache"
+   from glorpen.config import Config
+   import glorpen.config.loaders as loaders
+   
+   loader = loaders.YamlLoader(filepath=config_path)
+   cfg = Config(loader=loader, spec=spec).finalize()
+   
+   cfg.get("sources.some_param") #=> 'some param'
+   cfg.get("project_path") #=> '/tmp/project'
+   cfg.get("project_cache_path") #=> '/tmp/project/cache'
    cfg.get("logging") #=> 10
    cfg.get("maybe_string") #=> 12
 
