@@ -10,7 +10,7 @@ from six import raise_from
 
 __all__ = ["Config", "__version__"]
 
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 
 class Config(object):
     """Config validator and normalizer."""
