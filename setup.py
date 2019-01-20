@@ -20,7 +20,10 @@ with open("%s/README.rst" % root_dir, "rt") as f:
 setup (
   name = "glorpen-config",
   version = version,
-  packages = ["glorpen.config"],
+  packages = [
+    "glorpen.config",
+    "glorpen.config.fields"
+  ],
   package_dir = {"": "src"},
   install_requires = ["six>=1.9"],
   dependency_links = [],
