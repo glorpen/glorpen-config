@@ -33,11 +33,14 @@ You can:
 Loading data
 ------------
 
-``glorpen.config.Config`` class allows loading data from three sources:
+``glorpen.config.Config`` uses ``glorpen.config.loaders`` to allow loading data from different sources.
+
+Loaders should accept:
 
 - path, ``filepath`` constructor argument
 - file-like object, ``fileobj`` constructor argument
-- dict object passed to ``glorpen.config.Config.load_data`` or ``glorpen.config.Config.finalize``.
+
+Additionally you can just pass ``dict`` data to config with ``glorpen.config.Config.load_data`` or ``glorpen.config.Config.finalize``.
 
 Interpolation
 -------------
