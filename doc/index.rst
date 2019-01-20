@@ -56,7 +56,7 @@ String interpolation currently can be used only with :class:`glorpen.config.fiel
 Normalization and validation
 ----------------------------
 
-Each field type has own normalization rules, eg. for :class:`glorpen.config.fields.LogLevel`:
+Each field type has own normalization rules, eg. for :class:`glorpen.config.fields.log.LogLevel`:
 
 .. code-block:: yaml
 

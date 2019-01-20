@@ -10,14 +10,15 @@ Your first step should be defining configuration schema:
 .. code-block:: python
 
    import logging
-   import glorpen.config.fields as f
+   import glorpen.config.fields.simple as f
+   from glorpen.config.fields.log import LogLevel
    
    project_path = "/tmp/project"
    
    spec = f.Dict({
      "project_path": f.Path(default=project_path),
      "project_cache_path": f.Path(default="{{ project_path }}/cache"),
-     "logging": f.LogLevel(default=logging.INFO),
+     "logging": fl.LogLevel(default=logging.INFO),
      "database": f.String(),
      "sources": f.Dict({
          "some_param": f.String(),
@@ -59,16 +60,16 @@ Then you can create ``glorpen.config.Config`` instance:
 Creating custom fields
 ======================
 
-Custom field class should extend :class:`glorpen.config.fields.Field` or :class:`glorpen.config.fields.FieldWithDefault`.
+Custom field class should extend :class:`glorpen.config.fields.base.Field` or :class:`glorpen.config.fields.base.FieldWithDefault`.
 
-:meth:`glorpen.config.fields.Field.make_resolvable` method should register normalizer functions which later will be called in registration order.
+:meth:`glorpen.config.fields.base.Field.make_resolvable` method should register normalizer functions which later will be called in registration order.
 Each value returned by normalizer is passed to next one. After chain end value is returned as config value.
 
-Returned :class:`glorpen.config.fields.ResolvableObject` instance is resolved before passing it to next normalizer.
+Returned :class:`glorpen.config.fields.base.ResolvableObject` instance is resolved before passing it to next normalizer.
 
 If value passed to normalizator is invalid it should raise :class:`glorpen.config.exceptions.ValidationError`.
-Sometimes value can be lazy loaded - it is represented as :class:`glorpen.config.fields.ResolvableObject`.
-You can get real value by using :meth:`glorpen.config.fields.resolve`.
+Sometimes value can be lazy loaded - it is represented as :class:`glorpen.config.fields.base.ResolvableObject`.
+You can get real value by using :meth:`glorpen.config.fields.base.resolve`.
 
 .. code-block:: python
 

@@ -11,12 +11,34 @@
    
       Current package version.
 
-:mod:`glorpen.config.fields`
-----------------------------
+:mod:`glorpen.config.fields.base`
+---------------------------------
 
-.. automodule:: glorpen.config.fields
+.. automodule:: glorpen.config.fields.base
    :members:
    :special-members: __init__
+
+:mod:`glorpen.config.fields.simple`
+-----------------------------------
+
+.. automodule:: glorpen.config.fields.simple
+   :members:
+   :special-members: __init__
+
+:mod:`glorpen.config.fields.log`
+--------------------------------
+
+.. automodule:: glorpen.config.fields.log
+   :members:
+   :special-members: __init__
+
+:mod:`glorpen.config.fields.version`
+------------------------------------
+
+.. automodule:: glorpen.config.fields.version
+   :members:
+   :special-members: __init__
+
 
 :mod:`glorpen.config.loaders`
 -----------------------------

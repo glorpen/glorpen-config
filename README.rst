@@ -53,12 +53,12 @@ You can reuse values from config with ``{{ path.to.value }}`` notation, eg:
       path: "/tmp"
       cache_path: "{{ project.path }}/cache"
 
-String interpolation currently can be used only with ``glorpen.config.fields.String`` fields.
+String interpolation currently can be used only with ``glorpen.config.fields.simple.String`` fields.
 
 Normalization and validation
 ----------------------------
 
-Each field type has own normalization rules, eg. for ``glorpen.config.fields.LogLevel``:
+Each field type has own normalization rules, eg. for ``glorpen.config.fields.log.LogLevel``:
 
 .. code-block:: yaml
 
@@ -84,14 +84,15 @@ Your first step should be defining configuration schema:
 .. code-block:: python
 
    import logging
-   import glorpen.config.fields as f
+   import glorpen.config.fields.simple as f
+   from glorpen.config.fields.log import LogLevel
    
    project_path = "/tmp/project"
    
    spec = f.Dict({
      "project_path": f.Path(default=project_path),
      "project_cache_path": f.Path(default="{{ project_path }}/cache"),
-     "logging": f.LogLevel(default=logging.INFO),
+     "logging": LogLevel(default=logging.INFO),
      "database": f.String(),
      "sources": f.Dict({
          "some_param": f.String(),
@@ -133,16 +134,16 @@ Then you can create ``glorpen.config.Config`` instance:
 Creating custom fields
 ======================
 
-Custom field class should extend ``glorpen.config.fields.Field`` or ``glorpen.config.fields.FieldWithDefault``.
+Custom field class should extend ``glorpen.config.fields.base.Field`` or ``glorpen.config.fields.base.FieldWithDefault``.
 
-``glorpen.config.fields.Field.make_resolvable`` method should register normalizer functions which later will be called in registration order.
+``glorpen.config.fields.base.Field.make_resolvable`` method should register normalizer functions which later will be called in registration order.
 Each value returned by normalizer is passed to next one. After chain end value is returned as config value.
 
-Returned ``glorpen.config.fields.ResolvableObject`` instance is resolved before passing it to next normalizer.
+Returned ``glorpen.config.fields.base.ResolvableObject`` instance is resolved before passing it to next normalizer.
 
 If value passed to normalizator is invalid it should raise ``glorpen.config.exceptions.ValidationError``.
-Sometimes value can be lazy loaded - it is represented as ``glorpen.config.fields.ResolvableObject``.
-You can get real value by using ``glorpen.config.fields.resolve(value, config)``.
+Sometimes value can be lazy loaded - it is represented as ``glorpen.config.fields.base.ResolvableObject``.
+You can get real value by using ``glorpen.config.fields.base.resolve(value, config)``.
 
 .. code-block:: python
 
