@@ -154,6 +154,8 @@ class List(FieldWithDefault):
         r.on_resolve(self.normalize)
     
     def normalize(self, value, config):
+        if value is None:
+            return None
         ret = []
         for i, v in enumerate(value):
             with path_validation_error(i):
