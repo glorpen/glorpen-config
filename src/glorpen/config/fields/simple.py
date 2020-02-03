@@ -164,12 +164,18 @@ class List(FieldWithDefault):
         return isinstance(value, (tuple, list)) or super(List, self).is_value_supported(value)
 
 class Variant(FieldWithDefault):
-    """Converts value to normalized state using one :class:`.Field` choosen from multiple provided.
+    """Converts value to normalized state using one :class:`.Field` chosen from multiple provided.
     
     To allow blank values you have to pass child field with enabled blank values.
     First field which supports value (:meth:`.Field.is_value_supported`) will be used to convert it.
+
+    When ``try_resolving`` mode is disabled (default), value for child fields will only be checked
+    with ``is_value_supported``, so resulting field will be based only of data type, not value.
+
+    When enabled, in addition to checking for supported values data will be resolved and first
+    non error result used.
     """
-    def __init__(self, schema):
+    def __init__(self, schema, try_resolving=False):
         allow_blank = False
         
         for s in schema:
@@ -185,6 +191,7 @@ class Variant(FieldWithDefault):
         super(Variant, self).__init__(allow_blank=allow_blank)
         
         self._values_fields = schema
+        self._try_resolving = try_resolving
     
     def make_resolvable(self, r):
         r.on_resolve(self.normalize)
@@ -192,7 +199,13 @@ class Variant(FieldWithDefault):
     def normalize(self, value, config):
         for f in self._values_fields:
             if f.is_value_supported(value):
-                return f.resolve(value, checked=True)
+                if self._try_resolving:
+                    try:
+                        return f.resolve(value, checked=True).resolve(config)
+                    except ValidationError:
+                        pass
+                else:
+                    return f.resolve(value, checked=True)
         
         raise ValidationError("Unsupported data %r" % (value,))
     
