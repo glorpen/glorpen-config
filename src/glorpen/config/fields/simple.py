@@ -36,12 +36,13 @@ class Dict(Field):
         else:
             self._schema = schema
     
-    def make_resolvable(self, r):
+    def on_resolve(self, v, config):
         if self._schema:
-            r.on_resolve(self._check_keys_with_schema)
-            r.on_resolve(self._normalize_with_schema)
+            v = self._check_keys_with_schema(v, config)
+            v = self._normalize_with_schema(v, config)
         else:
-            r.on_resolve(self._normalize)
+            v = self._normalize(v, config)
+        return v
     
     def _check_keys_with_schema(self, value, config):
         if value is None:
@@ -112,9 +113,9 @@ class String(FieldWithDefault):
             except Exception as e:
                 raise ValidationError("Could not convert %r to string, got %r" % (value, e))
     
-    def make_resolvable(self, r):
-        r.on_resolve(self.to_string)
-        r.on_resolve(self.resolve_parts)
+    def on_resolve(self, v, config):
+        v = self.to_string(v, config)
+        return self.resolve_parts(v, config)
     
     def is_value_supported(self, value):
         return isinstance(value, (str,)) or super(String, self).is_value_supported(value)
@@ -125,9 +126,9 @@ class Path(String):
     def to_path(self, value, config):
         return os.path.realpath(value)
     
-    def make_resolvable(self, r):
-        super(Path, self).make_resolvable(r)
-        r.on_resolve(self.to_path)
+    def on_resolve(self, v, config):
+        v = super(Path, self).on_resolve(v, config)
+        return self.to_path(v, config)
 
 class PathObj(Path):
     """Converts value to :class:`pathlib.Path` object"""
@@ -135,9 +136,9 @@ class PathObj(Path):
         import pathlib
         return pathlib.Path(value)
     
-    def make_resolvable(self, r):
-        super(PathObj, self).make_resolvable(r)
-        r.on_resolve(self.to_obj)
+    def on_resolve(self, v, config):
+        v = super(PathObj, self).on_resolve(v, config)
+        return self.to_obj(v, config)
 
 class List(FieldWithDefault):
     """Converts value to list.
@@ -150,8 +151,8 @@ class List(FieldWithDefault):
         
         self._values_field = schema
     
-    def make_resolvable(self, r):
-        r.on_resolve(self.normalize)
+    def on_resolve(self, v, config):
+        return self.normalize(v, config)
     
     def normalize(self, value, config):
         if value is None:
@@ -195,8 +196,8 @@ class Variant(FieldWithDefault):
         self._values_fields = schema
         self._try_resolving = try_resolving
     
-    def make_resolvable(self, r):
-        r.on_resolve(self.normalize)
+    def on_resolve(self, r, config):
+        return self.normalize(r, config)
     
     def normalize(self, value, config):
         for f in self._values_fields:
@@ -224,6 +225,9 @@ class Any(FieldWithDefault):
     """Field that accepts any value."""
     def is_value_supported(self, value):
         return True
+    
+    def on_resolve(self, v, config):
+        return v
 
 class Number(FieldWithDefault):
     """Converts value to numbers."""
@@ -236,8 +240,8 @@ class Number(FieldWithDefault):
         
         return True
     
-    def make_resolvable(self, r):
-        r.on_resolve(self._normalize)
+    def on_resolve(self, r, config):
+        return self._normalize(r, config)
     
     def _normalize(self, value, config):
         if value is not None:
