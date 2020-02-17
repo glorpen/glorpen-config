@@ -59,19 +59,10 @@ class ResolvableObject(object):
     
     _resolving = False
     
-    def __init__(self, o):
+    def __init__(self, o, field):
         super(ResolvableObject, self).__init__()
         self.o = o
-        self.callbacks = []
-    
-    def on_resolve(self, f):
-        """Registers given callback to run when resolving values.
-        Passed function should accept following arguments:
-        
-        - value - may be a value or :class:`.ResolvableObject`
-        - a :class:`.Config` instance
-        """
-        self.callbacks.append(f)
+        self.field = field
     
     def resolve(self, config):
         """Resolves value with given config"""
@@ -88,8 +79,7 @@ class ResolvableObject(object):
         v = self.o
         
         self._resolving = True
-        for c in self.callbacks:
-            v = resolve(c(v, config), config)
+        v = resolve(self.field.on_resolve(v, config), config)
         self._resolving = False
         
         return v
@@ -108,13 +98,11 @@ class Field(object):
             if not self.is_value_supported(v):
                 raise ValidationError("Not supported value %r" % v)
         
-        r = ResolvableObject(v)
-        self.make_resolvable(r)
+        r = ResolvableObject(v, self)
         return r
-    
-    def make_resolvable(self, r):
-        """Used to register normalizes in current :class:`.ResolvableObject`."""
-        pass
+
+    def on_resolve(self, value, config):
+        raise NotImplementedError()
     
     def is_value_supported(self, value):
         """Checks if provided value is supported by this field"""
