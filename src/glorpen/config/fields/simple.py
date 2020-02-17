@@ -246,3 +246,20 @@ class Number(FieldWithDefault):
     def _normalize(self, value, config):
         if value is not None:
             return int(value)
+
+class Bool(FieldWithDefault):
+    truthful = [
+        "true",
+        "True",
+        "t",
+        1,
+        "y",
+        "yes",
+        "on",
+        True
+    ]
+    def is_value_supported(self, value):
+        return True
+    def on_resolve(self, v, config):
+        if v is not None:
+            return v in self.truthful
