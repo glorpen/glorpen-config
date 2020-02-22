@@ -2,133 +2,89 @@
 '''
 .. moduleauthor:: Arkadiusz Dzięgiel <arkadiusz.dziegiel@glorpen.pl>
 '''
-from glorpen.config.exceptions import ValidationError, CircularDependency
 import contextlib
+from collections import OrderedDict
+from glorpen.config.exceptions import ValidationError, CircularDependency
 
-def _as_list(v):
-    """Returns given object wrapped in list if not already"""
-    if not isinstance(v, (list)):
-        return [v]
-    return v
+class Value(object):
+    packed = None
 
-@contextlib.contextmanager
-def path_validation_error(after=None, before=None):
-    """Adds given path to validation error to make exceptions easy to read"""
-    if after:
-        after = _as_list(after)
-    
-    if before:
-        before = _as_list(before)
-    
-    try:
-        yield
-    except ValidationError as e:
-        
-        if not hasattr(e, "_partial_path"):
-            e._partial_path = []
-        
-        if after:
-            e._partial_path.extend(after)
-        
-        if before:
-            e._partial_path = before + e._partial_path
-        
-        raise e
+    def __init__(self, field):
+        super().__init__()
 
-def resolve(obj, config):
-    """Returns real object value (resolved) if applicable"""
-    if isinstance(obj, ResolvableObject):
-        return obj.resolve(config)
-    return obj
-
-class ResolvableObject(object):
-    """Configuration value ready to be resolved.
-    
-    Callbacks are registered by calling :attr:`.on_resolve`.
-    
-    To each callback are passed:
-    
-    * currently handled value
-    
-    * :class:`.Config` instance
-    
-    By using :class:`.Config` instance you can realize value based on any other value in configuration.
-    
-    If value is invalid, callback should raise :class:`.ValidationError` with appropriate error message.
-    """
-    
-    _resolving = False
-    
-    def __init__(self, o, field):
-        super(ResolvableObject, self).__init__()
-        self.o = o
         self.field = field
-    
-    def resolve(self, config):
-        """Resolves value with given config"""
-        if not hasattr(self, "_resolved_value"):
-            self._resolved_value = self._do_resolve(config)
-        
-        return self._resolved_value
-    
-    def _do_resolve(self, config):
-        
-        if self._resolving:
-            raise CircularDependency()
-        
-        v = self.o
-        
-        self._resolving = True
-        v = resolve(self.field.on_resolve(v, config), config)
-        self._resolving = False
-        
-        return v
+
+class ContainerValue(Value):
+    def __init__(self, values, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.values = OrderedDict(values)
+
+class SingleValue(Value):
+    def __init__(self, value, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.value = value
 
 class Field(object):
     """Single field in configuration file.
     
-    Custom fields should register own resolvers/validators/normalizers by extending :meth:`.make_resolvable`.
+    Custom fields should implement own normalizer/interpolation by overriding  corresponding methods.
     
-    For handling registered callbacks, see :class:`.ResolvableObject`.
+    To add custom validation based on whole config object use :meth:`.validator`.
     """
-    
-    def resolve(self, v, checked=False):
-        """Wraps value in :class:`.ResolvableObject` optionally checking whether provided value is supported."""
-        if not checked:
-            if not self.is_value_supported(v):
-                raise ValidationError("Not supported value %r" % v)
-        
-        r = ResolvableObject(v, self)
-        return r
 
-    def on_resolve(self, value, config):
+    def __init__(self, validators=None):
+        super().__init__()
+        self._validators = list(validators) if validators else []
+
+    def is_value_supported(self, raw_value) -> bool:
         raise NotImplementedError()
     
-    def is_value_supported(self, value):
-        """Checks if provided value is supported by this field"""
-        return False
+    def normalize(self, raw_value) -> OrderedDict:
+        raise NotImplementedError()
+    
+    def get_dependencies(self, normalized_value):
+        return []
 
-class _UnsetValue(): pass
+    def interpolate(self, normalized_value, values):
+        return normalized_value
+    
+    def create_packed_value(self, normalized_value):
+        raise NotImplementedError()
+    
+    def pack(self, interpolated_value):
+        packed = self.create_packed_value(interpolated_value)
+        interpolated_value.packed = packed
+        return packed
 
-class FieldWithDefault(Field):
-    """Base class for nullable fields with defaults."""
+    def validator(self, cb):
+        self._validators.append(cb)
+        return self
+
+    def validate(self, packed_value, packed_tree):
+        for cb in self._validators:
+            cb(packed_value, packed_tree)
+
+class Optional(object):
+    """Field wrapper for nullable fields with defaults."""
+    def __init__(self, field, default=None):
+        super().__init__()
+        self.field = field
+        self.default = default
     
-    def __init__(self, default=_UnsetValue, allow_blank=False):
-        super(FieldWithDefault, self).__init__()
-        self.default_value = default
-        self.allow_blank = allow_blank
+    def __getattr__(self, name):
+        return getattr(self.field, name)
     
-    def has_valid_default(self):
-        return self.default_value is not _UnsetValue
+    def is_value_supported(self, raw_value):
+        return raw_value is None or self.field.is_value_supported(raw_value)
     
-    def resolve(self, v, **kwargs):
-        if not self.allow_blank and v is None:
-            if self.has_valid_default():
-                v = self.default_value
-            else:
-                raise ValidationError("Blank value is not allowed.")
-        
-        return super(FieldWithDefault, self).resolve(v, **kwargs)
+    def normalize(self, raw_value):
+        if raw_value is None:
+            return self.default
+        return self.field.normalize(raw_value)
     
-    def is_value_supported(self, value):
-        return value is None
+    def get_dependencies(self, normalized_value):
+        if normalized_value is None:
+            return []
+        return self.field.get_dependencies(normalized_value)
