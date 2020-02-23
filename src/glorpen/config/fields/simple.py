@@ -224,55 +224,32 @@ class Variant(Field):
     
     To allow blank values you have to pass child field with enabled blank values.
     First field which supports value (:meth:`.Field.is_value_supported`) will be used to convert it.
-
-    When ``try_resolving`` mode is disabled (default), value for child fields will only be checked
-    with ``is_value_supported``, so resulting field will be based only of data type, not value.
-
-    When enabled, in addition to checking for supported values data will be resolved and first
-    non error result used.
     """
-    def __init__(self, schema, try_resolving=False):
-        allow_blank = False
-        
-        for s in schema:
-            try:
-                s_blank = s.allow_blank
-            except AttributeError:
-                continue
-            
-            if s_blank:
-                allow_blank = True
-                break
-        
-        super(Variant, self).__init__(allow_blank=allow_blank)
-        
+    def __init__(self, schema, *args, **kwargs):
+        super(Variant, self).__init__(*args, **kwargs)
         self._values_fields = schema
-        self._try_resolving = try_resolving
     
-    def get(self, raw_value):
-        return self.normalize(raw_value)
+    def normalize(self, raw_value):
+        return self._get_matching_field(raw_value).normalize(raw_value)
     
-    def normalize(self, value):
+    def _get_matching_field(self, raw_value):
         for f in self._values_fields:
-            if f.is_value_supported(value):
-                return f.get(value)
-                # if self._try_resolving:
-                #     try:
-                #     except ValidationError:
-                #         pass
-                # else:
-                #     return f.resolve(value, checked=True)
-        
-        raise ValidationError("Unsupported data %r" % (value,))
-    
-    def is_value_supported(self, value):
-        if super(Variant, self).is_value_supported(value):
-            return True
-        
-        for f in self._values_fields:
-            if f.is_value_supported(value):
+            if f.is_value_supported(raw_value):
+                return f
+
+    def is_value_supported(self, raw_value):
+        if self._get_matching_field(raw_value):
                 return True
         return False
+    
+    def create_packed_value(self, normalized_value):
+        return normalized_value.field.pack(normalized_value)
+    
+    def interpolate(self, normalized_value, values):
+        return normalized_value.field.interpolate(normalized_value, values)
+    
+    def get_dependencies(self, normalized_value):
+        return normalized_value.field.get_dependencies(normalized_value)
 
 class Any(Field):
     """Field that accepts any value."""

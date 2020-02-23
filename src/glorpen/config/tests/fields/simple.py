@@ -1,7 +1,7 @@
 import unittest
 import pathlib
 
-from glorpen.config.fields.simple import String, Reference, Path, PathObj, Any, Dict
+from glorpen.config.fields.simple import String, Reference, Path, PathObj, Any, Dict, Variant, Number
 from glorpen.config.fields.base import SingleValue
 
 class StringTest(unittest.TestCase):
@@ -69,7 +69,14 @@ class DictTest(unittest.TestCase):
         f = Dict(keys=String(), values=String())
         v = f.normalize({'a':1})
         self.assertEqual(f.pack(v), {'a':'1'})
+
     def test_value_with_schema(self):
         f = Dict({'a': String()})
         v = f.normalize({'a':'1'})
         self.assertEqual(f.pack(v), {'a':'1'})
+
+class VariantTest(unittest.TestCase):
+    def test_value_switching(self):
+        f = Variant([Number(), String()])
+        self.assertEqual(f.pack(f.normalize("1")), 1, "As number")
+        self.assertEqual(f.pack(f.normalize("1a")), "1a", "As string")
