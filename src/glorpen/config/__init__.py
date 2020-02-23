@@ -2,99 +2,101 @@
 '''
 .. moduleauthor:: Arkadiusz Dzięgiel <arkadiusz.dziegiel@glorpen.pl>
 '''
-from glorpen.config.fields import ResolvableObject, path_validation_error
-from glorpen.config.exceptions import CircularDependency
+# from glorpen.config.fields import path_validation_error
 from collections import OrderedDict
 from glorpen.config import exceptions
-from six import raise_from
 
 __all__ = ["Config", "__version__"]
 
-__version__ = "2.2.0"
+__version__ = "3.0.0"
+
 
 class Config(object):
     """Config validator and normalizer."""
     
-    data = None
+    def walk(self, normalized_tree, path=[]):
+        if hasattr(normalized_tree, "values"):
+            for k,v in normalized_tree.values.items():
+                lpath = tuple(list(path) + [k])
+                yield from self.walk(v, lpath)
+                yield lpath, v
     
-    def __init__(self, spec, loader=None, split_character='.'):
+    def __init__(self, spec, loader=None):
         super(Config, self).__init__()
         
         self.loader = loader
         self.spec = spec
-        self.split_character = split_character
     
-    def finalize(self, data=None):
-        """Load and resolve configuration in one go.
+    def get(self, raw_value):
+        # raw_value = self.loader.load()
+        if not self.spec.is_value_supported(raw_value):
+            raise Exception("value is not supported")
         
-        If data argument is given loader specified in constructor will not be used.
-        """
+        normalized_value = self.spec.normalize(raw_value)
+        index, required_deps_by_path = self._find_dependencies(normalized_value)
+        resolved_paths = self._resolve_dependencies(index, required_deps_by_path)
+
+        self._inject_resolved_dependencies(resolved_paths, normalized_value)
+
+        packed_tree = self.spec.pack(normalized_value)
+        self._validate(index, packed_tree)
+
+        return packed_tree
+
+    def _find_dependencies(self, normalized_value):
+        index = {}
+        required_deps_by_path = {}
+
+        for path, i in self.walk(normalized_value):
+            index[path] = i
+            deps = i.field.get_dependencies(i)
+            if deps:
+                required_deps_by_path[path] = deps
         
-        if data:
-            self.load_data(data)
-        else:
-            self.load()
+        return index, required_deps_by_path
+
+    def _resolve_dependencies(self, index, required_deps_by_path):
+        resolved_paths = {}
+        something_was_done = True
         
-        self.resolve()
+        while something_was_done:
+            something_was_done = False
+            for req_path, req_deps in required_deps_by_path.items():
+                if req_path in resolved_paths:
+                    continue
+                
+                unknown_deps = set(req_deps).intersection(set(required_deps_by_path).difference(resolved_paths))
+                if unknown_deps:
+                    print("deps for dep - skipping")
+                    continue
+                
+                something_was_done = True
+
+                values = []
+                for i in req_deps:
+                    values.append(resolved_paths[i] if i in resolved_paths else index[i].value)
+                resolved_paths[req_path] = index[req_path].field.interpolate(index[req_path], values)
+
+        unsolvable_deps = set(required_deps_by_path).difference(resolved_paths)
+        if unsolvable_deps:
+            raise Exception("Paths could not be solved: %r", unsolvable_deps)
         
-        return self
+        return resolved_paths
     
-    def load(self):
-        self.load_data(self.loader.load())
+    def _inject_resolved_dependencies(self, resolved_paths, normalized_value):
+        for path, value in resolved_paths.items():
+            i = normalized_value
+            for p in path:
+                i = normalized_value.values[p]
+            i.value = value
     
-    def load_data(self, data):
-        """Loads given data as source."""
-        self.data = self.spec.resolve(data)
-    
-    def _get_value(self, data):
-        if isinstance(data, ResolvableObject):
-            return self._visit_all(data.resolve(self))
-        else:
-            return data
-    
-    def _visit_all(self, data):
-        if isinstance(data, dict):
-            ret = OrderedDict()
-            for k,v in data.items():
-                with path_validation_error(before=k):
-                    ret[k] = self._visit_all(v)
-            
-            return ret
-        
-        if isinstance(data, list):
-            ret = []
-            
-            for i,v in enumerate(data):
-                with path_validation_error(before=i):
-                    ret.append(self._visit_all(v)) 
-            
-            return ret
-        
-        return self._get_value(data)
-    
-    def resolve(self):
-        """Visits all values and converts them to normalized form."""
-        self.data = self.data.resolve(self)
-        try:
-            self.data = self._visit_all(self.data)
-        except exceptions.ValidationError as e:
-            raise_from(exceptions.PathValidationError(e), None)
-    
-    def get(self, p):
-        """Gets value from config. To get value under `some_key` use dotted notation: `some_key.value` (defaults)."""
-        d = self.data
-        
-        if isinstance(p, str):
-            parts = p.split(self.split_character)
-        else:
-            parts = p
-        
-        try:
-            for i in parts:
-                d = self._get_value(d)
-                if not i in d:
-                    raise ValueError("No key %r in path %r" % (i, p))
-                d = d.get(i)
-            return self._get_value(d)
-        except CircularDependency:
-            raise CircularDependency("Circular dependency at %r" % p)
+    def _validate(self, index, packed_tree):
+        errors = {}
+        for path, f in index.items():
+            try:
+                f.field.validate(f.packed, packed_tree)
+            except Exception as e:
+                errors[path] = e
+
+        if errors:
+            raise Exception(errors)
