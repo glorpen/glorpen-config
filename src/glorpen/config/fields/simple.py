@@ -167,7 +167,7 @@ class String(Field):
     def interpolate(self, normalized_value, values):
         i = iter(values)
         def replace(matchobj):
-            return next(i)
+            return str(next(i))
         return self._re_part.sub(replace, normalized_value.value)
 
 class Reference(String):
