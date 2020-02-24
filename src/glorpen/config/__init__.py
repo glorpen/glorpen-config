@@ -14,6 +14,11 @@ __version__ = "3.0.0"
 class Config(object):
     """Config validator and normalizer."""
     
+    def __init__(self, spec):
+        super(Config, self).__init__()
+
+        self.spec = spec
+    
     def walk(self, normalized_tree, path=[]):
         if hasattr(normalized_tree, "values"):
             for k,v in normalized_tree.values.items():
@@ -21,14 +26,7 @@ class Config(object):
                 yield from self.walk(v, lpath)
                 yield lpath, v
     
-    def __init__(self, spec, loader=None):
-        super(Config, self).__init__()
-        
-        self.loader = loader
-        self.spec = spec
-    
     def get(self, raw_value):
-        # raw_value = self.loader.load()
         if not self.spec.is_value_supported(raw_value):
             raise Exception("value is not supported")
         
