@@ -103,5 +103,4 @@ class Optional(object):
     def help(self, **kwargs):
         if "value" not in kwargs:
             kwargs["value"] = self.default
-            # TODO: default value should be normalized
         return self.field.help(**kwargs)
