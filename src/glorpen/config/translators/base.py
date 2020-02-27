@@ -52,8 +52,6 @@ def visitor(self, tag, *args):
             getattr(self, method)(*(arg + args))
 
 class Renderer(object):
-    _data = None
-
     def visit(self, help):
         with visitor(self, "node", help):
             if help.has_variants:
@@ -77,7 +75,7 @@ class Renderer(object):
         raise NotImplementedError()
 
     def finish(self):
-        return self._data
+        raise NotImplementedError()
 
     def render(self, help):
         self.reset()
