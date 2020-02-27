@@ -98,3 +98,6 @@ class Config(object):
 
         if errors:
             raise Exception(errors)
+    
+    def help(self):
+        return self.spec._help

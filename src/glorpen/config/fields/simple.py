@@ -121,7 +121,19 @@ class Dict(Field):
             # TODO: values should be somehow grouped per key
             # for k in normalized_value.values.keys():
             #     k.field.interpolate()
+    
+    def help(self, **kwargs):
+        if self._schema:
+            h = {}
+            for k,v in self._schema.items():
+                if v._help is None:
+                    v.help()
+                h[k] = v._help
+        
+        # TODO: implement support for key/value schema and variants
 
+        kwargs["children"] = h
+        return super().help(**kwargs)
 
 class String(Field):
     """Converts value to string."""
@@ -218,7 +230,7 @@ class List(Field):
         for i in interpolated_value.values.values():
             ret.append(self._schema.pack(i))
         return tuple(ret)
-
+    
 class Variant(Field):
     """Converts value to normalized state using one :class:`.Field` chosen from multiple provided.
     

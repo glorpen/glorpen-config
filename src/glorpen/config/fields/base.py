@@ -5,6 +5,7 @@
 import contextlib
 from collections import OrderedDict
 from glorpen.config.exceptions import ValidationError, CircularDependency
+from glorpen.config.translators.base import Help
 
 class Value(object):
     packed = None
@@ -33,6 +34,8 @@ class Field(object):
     
     To add custom validation based on whole config object use :meth:`.validator`.
     """
+
+    _help = None
 
     def __init__(self, validators=None):
         super().__init__()
@@ -65,6 +68,14 @@ class Field(object):
     def validate(self, packed_value, packed_tree):
         for cb in self._validators:
             cb(packed_value, packed_tree)
+    
+    def help(self, **kwargs):
+        self._help = Help(**kwargs)
+        return self
+    
+    def variant(self, **kwargs):
+        self._help.variant(**kwargs)
+        return self
 
 class Optional(object):
     """Field wrapper for nullable fields with defaults."""
@@ -88,3 +99,9 @@ class Optional(object):
         if normalized_value is None:
             return []
         return self.field.get_dependencies(normalized_value)
+    
+    def help(self, **kwargs):
+        if "value" not in kwargs:
+            kwargs["value"] = self.default
+            # TODO: default value should be normalized
+        return self.field.help(**kwargs)
