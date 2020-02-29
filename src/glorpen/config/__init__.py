@@ -1,7 +1,8 @@
-# -*- coding: utf-8 -*-
 '''
 .. moduleauthor:: Arkadiusz Dzięgiel <arkadiusz.dziegiel@glorpen.pl>
 '''
+from glorpen.config.translators.base import Translator, Help
+
 # from glorpen.config.fields import path_validation_error
 from collections import OrderedDict
 from glorpen.config import exceptions
@@ -40,7 +41,7 @@ class Config(object):
         self._validate(index, packed_tree)
 
         return packed_tree
-
+    
     def _find_dependencies(self, normalized_value):
         index = {}
         required_deps_by_path = {}
@@ -100,4 +101,8 @@ class Config(object):
             raise Exception(errors)
     
     def help(self):
+        # initialize help if not already done
+        if self.spec._help is None:
+            self.spec.help()
+        
         return self.spec._help
