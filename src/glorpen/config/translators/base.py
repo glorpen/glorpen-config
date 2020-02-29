@@ -81,3 +81,24 @@ class Renderer(object):
         self.reset()
         self.visit(help)
         return self.finish()
+
+class Reader(object):
+    def read(self):
+        raise NotImplementedError()
+
+class Translator(object):
+    def __init__(self, config):
+        super().__init__()
+
+        self.config = config
+        
+    def read(self, reader: Reader):
+        return self.config.get(reader.read())
+
+    def generate_example(self, renderer: Renderer):
+        h = self.config.help()
+        return renderer.render(h)
+
+    def write_example(self, renderer: Renderer, path):
+        with open(path, "wt") as f:
+            f.write(self.generate_example(renderer))
