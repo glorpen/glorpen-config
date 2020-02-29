@@ -148,3 +148,8 @@ class Optional(Field):
     def variant(self, **kwargs):
         self.field.variant(**kwargs)
         return self
+    
+    @property
+    def _help(self):
+        # FIXME: make _help private
+        return self.field._help

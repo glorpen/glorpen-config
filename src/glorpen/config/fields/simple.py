@@ -151,8 +151,10 @@ class Dict(Field):
                 if v._help is None:
                     v.help()
                 h[k] = v._help
+        else:
+            raise NotImplementedError()
         
-        # TODO: implement support for key/value schema and variants
+        # TODO: implement support for key/value schema
 
         kwargs["children"] = h
         return super().help(**kwargs)
@@ -263,6 +265,15 @@ class List(Field):
         for i in interpolated_value.values.values():
             ret.append(self._schema.pack(i))
         return tuple(ret)
+    
+    def help(self, **kwargs):
+        # TODO: make _help private
+        if self._schema._help is None:
+            self._schema.help()
+        
+        kwargs["children"] = [self._schema._help]
+
+        return super().help(**kwargs)
     
 class Variant(Field):
     """Converts value to normalized state using one :class:`.Field` chosen from multiple provided.
