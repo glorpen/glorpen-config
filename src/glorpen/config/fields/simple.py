@@ -217,7 +217,7 @@ class Path(String):
         normalized_value = super(Path, self).normalize(raw_value)
         normalized_value.value = os.path.realpath(normalized_value.value)
         return normalized_value
-
+    
 class PathObj(Path):
     """Converts value to :class:`pathlib.Path` object."""
     
@@ -225,6 +225,15 @@ class PathObj(Path):
         normalized_value = super(PathObj, self).normalize(raw_value)
         normalized_value.value = pathlib.Path(normalized_value.value)
         return normalized_value
+    
+    def get_dependencies(self, normalized_value):
+        sv = SingleValue(str(normalized_value.value), self)
+        return super().get_dependencies(sv)
+    
+    def interpolate(self, normalized_value, values):
+        sv = SingleValue(str(normalized_value.value), self)
+        interpolated = super().interpolate(sv, values)
+        return pathlib.Path(interpolated)
 
 class List(Field):
     """Converts value to list."""
