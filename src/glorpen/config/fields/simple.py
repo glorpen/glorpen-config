@@ -7,7 +7,7 @@ import re
 import pathlib
 from collections import OrderedDict
 from glorpen.config.exceptions import ValidationError
-from glorpen.config.fields.base import Field, SingleValue, ContainerValue
+from glorpen.config.fields.base import Field, SingleValue, ContainerValue, Optional
 
 class Dict(Field):
     """Converts values to :class:`collections.OrderedDict`
@@ -22,7 +22,7 @@ class Dict(Field):
     _key_field = None
     _value_field = None
     
-    def __init__(self, schema=None, keys=None, values=None, check_keys_level=0, check_values=False, **kwargs):
+    def __init__(self, schema=None, keys=None, values=None, check_keys=False, check_values=False, **kwargs):
         """
         To set specific schema pass dict to schema argument: ``{"param1": SomeField()}``.
         
@@ -30,7 +30,7 @@ class Dict(Field):
         """
         super(Dict, self).__init__(**kwargs)
 
-        self._check_keys_level = check_keys_level
+        self._check_keys = check_keys
         self._check_values = check_values
         
         if schema is None:
@@ -51,7 +51,7 @@ class Dict(Field):
             v = self._normalize(raw_value)
         
         return ContainerValue(v, self)
-    
+
     def _check_keys_with_schema(self, raw_value):
         spec_blanks = set()
         spec=set(self._schema.keys())
@@ -101,9 +101,23 @@ class Dict(Field):
         
         return ret
     
-    def is_value_supported(self, value):
-        # TODO: use check_keys_level and check_values field options
-        return isinstance(value, (dict,))
+    def is_value_supported(self, raw_value):
+        # TODO: use check_values field options
+        if not isinstance(raw_value, (dict,)):
+            return False
+        
+        if self._check_keys:
+            if self._schema:
+                for k,f in self._schema.items():
+                    if not isinstance(f, Optional):
+                        if k not in raw_value:
+                            return False
+            else:
+                for k in raw_value.keys():
+                    if not self._key_field.is_value_supported(k):
+                        return False
+        
+        return True
     
     def create_packed_value(self, normalized_value):
         ret = OrderedDict()
@@ -257,7 +271,7 @@ class Variant(Field):
 
     def is_value_supported(self, raw_value):
         if self._get_matching_field(raw_value):
-                return True
+            return True
         return False
     
     def create_packed_value(self, normalized_value):
