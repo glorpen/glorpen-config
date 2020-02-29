@@ -1,6 +1,6 @@
 import yaml
 import textwrap
-from glorpen.config.translators.base import Renderer
+from glorpen.config.translators.base import Renderer, Reader
 
 class YamlRenderer(Renderer):
     def reset(self):
@@ -84,3 +84,12 @@ class YamlRenderer(Renderer):
     def leave_item_list(self, node):
         self._key.pop()
         self._depth += 1
+
+class YamlReader(Reader):
+    def __init__(self, path):
+        super().__init__()
+        self.path = path
+    
+    def read(self):
+        with open(self.path, "rt") as f:
+            return yaml.safe_load(f.read())
