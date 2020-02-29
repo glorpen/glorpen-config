@@ -40,6 +40,9 @@ class Field(object):
 
     _help = None
 
+    # used by Optional wrapper
+    default_value = None
+
     def __init__(self, validators=None):
         super().__init__()
         self._validators = list(validators) if validators else []
@@ -54,7 +57,10 @@ class Field(object):
         return []
 
     def interpolate(self, normalized_value, values):
-        return normalized_value
+        """
+        Should return raw interpolated value.
+        """
+        raise NotImplementedError()
     
     def create_packed_value(self, normalized_value):
         raise NotImplementedError()
@@ -80,30 +86,65 @@ class Field(object):
         self._help.variant(**kwargs)
         return self
 
-class Optional(object):
+class Unset(): pass
+
+class Optional(Field):
     """Field wrapper for nullable fields with defaults."""
-    def __init__(self, field, default=None):
+    def __init__(self, field, default=Unset):
         super().__init__()
         self.field = field
+        
+        if default is Unset:
+            default = field.default_value
         self.default = default
     
-    def __getattr__(self, name):
-        return getattr(self.field, name)
     
     def is_value_supported(self, raw_value):
         return raw_value is None or self.field.is_value_supported(raw_value)
     
     def normalize(self, raw_value):
         if raw_value is None:
-            return self.default
+            return SingleValue(self.default, self)
         return self.field.normalize(raw_value)
     
     def get_dependencies(self, normalized_value):
-        if normalized_value is None:
-            return []
+        try:
+            if normalized_value.values is None:
+                return []
+        except AttributeError:
+            if normalized_value.value is None:
+                return []
+        
         return self.field.get_dependencies(normalized_value)
+    
+    def interpolate(self, normalized_value, values):
+        try:
+            if normalized_value.value is self.default:
+                return self.default
+        except AttributeError:
+            pass
+        
+        return self.field.interpolate(normalized_value, values)
+    
+    def create_packed_value(self, normalized_value):
+        # when we use default value but self.field is a list or dict
+        # we know that we should use default value
+        # if SingleValue is used by self.field then we should check
+        # if given value is default
+        try:
+            if normalized_value.value is self.default:
+                return self.default
+        except AttributeError:
+            pass
+        
+        return self.field.create_packed_value(normalized_value)
     
     def help(self, **kwargs):
         if "value" not in kwargs:
             kwargs["value"] = self.default
-        return self.field.help(**kwargs)
+        self.field.help(**kwargs)
+        return self
+    
+    def variant(self, **kwargs):
+        self.field.variant(**kwargs)
+        return self

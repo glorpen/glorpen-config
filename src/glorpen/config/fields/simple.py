@@ -18,6 +18,8 @@ class Dict(Field):
     Dict values are lazy resolved.
     """
     
+    default_value = {}
+
     _schema = None
     _key_field = None
     _value_field = None
@@ -226,6 +228,8 @@ class PathObj(Path):
 
 class List(Field):
     """Converts value to list."""
+
+    default_value = []
     
     def __init__(self, schema, check_values=False, **kwargs):
         super(List, self).__init__(**kwargs)
