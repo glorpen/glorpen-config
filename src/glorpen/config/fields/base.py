@@ -13,6 +13,9 @@ class Value(object):
     def __init__(self, field):
         super().__init__()
 
+        if not isinstance(field, (Field,)):
+            raise Exception("Value %r passed as field is not a field" % field)
+        
         self.field = field
 
 class ContainerValue(Value):
