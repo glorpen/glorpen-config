@@ -40,11 +40,16 @@ class Dict(Field):
             self._schema = schema
     
     def normalize(self, raw_value):
+        # when all subkeys are optional, parent can be omitted
+        if raw_value is None:
+            raw_value = OrderedDict()
+        
         if self._schema:
             v = self._check_keys_with_schema(raw_value)
             v = self._normalize_with_schema(v)
         else:
             v = self._normalize(raw_value)
+        
         return ContainerValue(v, self)
     
     def _check_keys_with_schema(self, raw_value):
@@ -108,19 +113,20 @@ class Dict(Field):
 
         return ret
     
-    def get_dependencies(self, normalized_value):
-        ret = []
-        if self._key_field:
-            for k in normalized_value.values.keys():
-                ret.extend(self._key_field.get_dependencies(k))
-        return ret
+    # def get_dependencies(self, normalized_value):
+    #     ret = []
+    #     if self._key_field:
+    #         for k in normalized_value.values.keys():
+    #             ret.extend(self._key_field.get_dependencies(k))
+    #     return ret
     
-    def interpolate(self, normalized_value, values):
-        if self._key_field:
-            i = iter(values)
-            # TODO: values should be somehow grouped per key
-            # for k in normalized_value.values.keys():
-            #     k.field.interpolate()
+    # def interpolate(self, normalized_value, values):
+    #     if self._key_field:
+    #         i = iter(values)
+    #         # TODO: values should be somehow grouped per key
+    #         # for k in normalized_value.values.keys():
+    #         #     k.field.interpolate()
+    #     raise NotImplementedError()
     
     def help(self, **kwargs):
         if self._schema:
@@ -214,7 +220,7 @@ class List(Field):
         self._check_values = check_values
     
     def normalize(self, raw_value):
-        return ContainerValue(self, ((i, self._schema.normalize(v)) for i,v in enumerate(raw_value)))
+        return ContainerValue(((i, self._schema.normalize(v)) for i,v in enumerate(raw_value)), self)
     
     def is_value_supported(self, raw_value):
         if not isinstance(raw_value, (tuple, list)):
