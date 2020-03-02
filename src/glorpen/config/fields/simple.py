@@ -30,7 +30,7 @@ class Dict(Field):
     _key_field = None
     _value_field = None
     
-    def __init__(self, schema=None, keys=None, values=None, check_keys=False, check_values=False, **kwargs):
+    def __init__(self, schema=None, keys=None, values=None, check_keys=False, **kwargs):
         """
         To set specific schema pass dict to schema argument: ``{"param1": SomeField()}``.
         
@@ -39,7 +39,6 @@ class Dict(Field):
         super(Dict, self).__init__(**kwargs)
 
         self._check_keys = check_keys
-        self._check_values = check_values
         
         if schema is None:
             self._key_field = keys or String()
@@ -110,7 +109,6 @@ class Dict(Field):
         return ret
     
     def is_value_supported(self, raw_value):
-        # TODO: use check_values field options
         if not isinstance(raw_value, (dict,)):
             return False
         
