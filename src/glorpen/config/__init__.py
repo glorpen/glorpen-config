@@ -56,6 +56,10 @@ class Config(object):
         resolved_paths = {}
         something_was_done = True
         
+        # iterate over required deps until we cannot resolve anything
+        # it should happen in two cases:
+        # - all dependencies were resolved
+        # - only circular deps are left
         while something_was_done:
             something_was_done = False
             for req_path, req_deps in required_deps_by_path.items():
@@ -64,7 +68,7 @@ class Config(object):
                 
                 unknown_deps = set(req_deps).intersection(set(required_deps_by_path).difference(resolved_paths))
                 if unknown_deps:
-                    print("deps for dep - skipping")
+                    # nested deps - skipping
                     continue
                 
                 something_was_done = True
@@ -73,14 +77,13 @@ class Config(object):
                 
                 for i in req_deps:
                     values.append(resolved_paths[i] if i in resolved_paths else index[i].value)
+                if req_path not in index:
+                    raise Exception("Path %r was not found in config" % (req_path,) )
                 resolved_paths[req_path] = index[req_path].field.interpolate(index[req_path], values)
 
         unsolvable_deps = set(required_deps_by_path).difference(resolved_paths)
         if unsolvable_deps:
             raise Exception("Paths could not be solved: %r", unsolvable_deps)
-        
-        # return resolved_paths
-    
     
     def _validate(self, index, packed_tree):
         errors = {}
