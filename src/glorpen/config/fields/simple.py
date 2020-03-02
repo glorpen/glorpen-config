@@ -350,3 +350,30 @@ class Bool(Field):
         return SingleValue(raw_value in self.truthful, self)
     def create_packed_value(self, normalized_value):
         return normalized_value.value
+
+class Choice(Field):
+    def __init__(self, choices):
+        super().__init__()
+
+        self._choices = choices
+        
+    def is_value_supported(self, raw_value):
+        try:
+            hash(raw_value)
+        except TypeError:
+            return False
+        return True
+    
+    def normalize(self, raw_value):
+        if raw_value not in self._choices:
+            raise Exception("Unsupported value %r" % raw_value)
+
+        if isinstance(self._choices, (tuple, list)):
+            v = raw_value
+        else:
+            v = self._choices[raw_value]
+            
+        return SingleValue(v, self)
+    
+    def create_packed_value(self, normalized_value):
+        return normalized_value.value
