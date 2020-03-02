@@ -25,7 +25,7 @@ setup (
     "glorpen.config.fields"
   ],
   package_dir = {"": "src"},
-  install_requires = ["six>=1.9"],
+  install_requires = [],
   dependency_links = [],
   namespace_packages  = ["glorpen"],
   author = "Arkadiusz Dzięgiel",
@@ -40,7 +40,6 @@ setup (
     "Intended Audience :: Developers",
     "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 2.7",
     "Programming Language :: Python :: 3.2",
     "Programming Language :: Python :: 3.3",
     "Programming Language :: Python :: 3.4",
@@ -52,9 +51,4 @@ setup (
     "Topic :: Software Development :: Libraries :: Python Modules",
   ],
   test_suite = "glorpen.config.tests",
-  command_options = {
-    "bdist_wheel": {
-        "universal": ["setup.py", 1]
-    }
-  }
 )
