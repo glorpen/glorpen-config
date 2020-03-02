@@ -97,8 +97,4 @@ class Config(object):
             raise Exception(errors)
     
     def help(self):
-        # initialize help if not already done
-        if self.spec._help is None:
-            self.spec.help()
-        
-        return self.spec._help
+        return self.spec.help_config
