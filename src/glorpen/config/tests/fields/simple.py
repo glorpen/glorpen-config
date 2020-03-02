@@ -74,6 +74,16 @@ class DictTest(unittest.TestCase):
         f = Dict({'a': String()})
         v = f.normalize({'a':'1'})
         self.assertEqual(f.pack(v), {'a':'1'})
+    
+    def test_key_interpolation(self):
+        f = Dict(keys=String(), values=Any())
+        v = f.normalize({'a{x}{x}':'1', 'b{x}{x}':'x'})
+        f.interpolate(v, ['1', '2', '3', '4'])
+        result = f.pack(v)
+
+        self.assertIn("a12", result, "First key was interpolated")
+        self.assertIn("b34", result, "Second key was interpolated")
+
 
 class VariantTest(unittest.TestCase):
     def test_value_switching(self):

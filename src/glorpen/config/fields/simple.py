@@ -9,13 +9,19 @@ from collections import OrderedDict
 from glorpen.config.exceptions import ValidationError
 from glorpen.config.fields.base import Field, SingleValue, ContainerValue, Optional
 
+def take_a_few(iterable, count):
+    i = 0
+    while i < count:
+        yield next(iterable)
+        i+=1
+
 class Dict(Field):
     """Converts values to :class:`collections.OrderedDict`
     
     Supports setting whole schema (specific keys and specific values)
     or just keys type and values type.
     
-    Dict values are lazy resolved.
+    Keys can be interpolated if ``keys`` param supports it.
     """
     
     default_value = {}
@@ -129,20 +135,23 @@ class Dict(Field):
 
         return ret
     
-    # def get_dependencies(self, normalized_value):
-    #     ret = []
-    #     if self._key_field:
-    #         for k in normalized_value.values.keys():
-    #             ret.extend(self._key_field.get_dependencies(k))
-    #     return ret
+    def get_dependencies(self, normalized_value):
+        ret = []
+        if self._key_field:
+            for k in normalized_value.values.keys():
+                ret.extend(self._key_field.get_dependencies(k))
+        return ret
     
-    # def interpolate(self, normalized_value, values):
-    #     if self._key_field:
-    #         i = iter(values)
-    #         # TODO: values should be somehow grouped per key
-    #         # for k in normalized_value.values.keys():
-    #         #     k.field.interpolate()
-    #     raise NotImplementedError()
+    def interpolate(self, normalized_value, values):
+        if self._key_field:
+            i = iter(values)
+            for k in normalized_value.values.keys():
+                vk = tuple(take_a_few(i, len(self._key_field.get_dependencies(k))))
+                
+                if vk:
+                    k.value = self._key_field.interpolate(k, vk)
+        else:
+            raise NotImplementedError()
     
     def help(self, **kwargs):
         if self._schema:
