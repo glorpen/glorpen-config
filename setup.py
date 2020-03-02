@@ -22,7 +22,8 @@ setup (
   version = version,
   packages = [
     "glorpen.config",
-    "glorpen.config.fields"
+    "glorpen.config.fields",
+    "glorpen.config.translators"
   ],
   package_dir = {"": "src"},
   install_requires = [],

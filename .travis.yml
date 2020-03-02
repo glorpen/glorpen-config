@@ -9,7 +9,7 @@ install:
   - pip install .
 
 script:
-  - nosetests ./src
+  - python -m unittest discover -s src/glorpen/config/tests -t src/ -p '*.py'
 
 deploy:
   provider: pypi
@@ -20,4 +20,4 @@ deploy:
     tags: true
     branch: master
     python: '3.7'
-  distributions: "sdist bdist_wheel --universal"
+  distributions: "sdist bdist_wheel"
