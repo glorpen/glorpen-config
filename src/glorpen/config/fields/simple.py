@@ -146,10 +146,10 @@ class Dict(Field):
         if self._key_field:
             i = iter(values)
             for k in normalized_value.values.keys():
-                vk = tuple(take_a_few(i, len(self._key_field.get_dependencies(k))))
-                
-                if vk:
-                    k.value = self._key_field.interpolate(k, vk)
+                deps_count = len(self._key_field.get_dependencies(k))
+                if deps_count:
+                    vk = tuple(take_a_few(i, deps_count))
+                    self._key_field.interpolate(k, vk)
         else:
             raise NotImplementedError()
     
@@ -213,7 +213,7 @@ class String(Field):
         i = iter(values)
         def replace(matchobj):
             return str(next(i))
-        return self._re_part.sub(replace, normalized_value.value)
+        normalized_value.value = self._re_part.sub(replace, normalized_value.value)
 
 class Reference(String):
     def interpolate(self, normalized_value, values):

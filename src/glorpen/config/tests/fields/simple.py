@@ -7,7 +7,7 @@ from glorpen.config.fields.base import SingleValue
 class StringTest(unittest.TestCase):
     def create_with_value(self, s):
         f = String(left_char="<", right_char=">", split_by=":")
-        return SingleValue(s, f)
+        return f.normalize(s)
 
     def test_dependencies_parsing(self):
         v = self.create_with_value("example")
@@ -27,14 +27,14 @@ class StringTest(unittest.TestCase):
     
     def test_interpolation(self):
         v = self.create_with_value("t<noop>t")
-        iv = v.field.interpolate(v, ["xx"])
+        v.field.interpolate(v, ["xx"])
 
-        self.assertEqual(iv, "txxt")
+        self.assertEqual(v.value, "txxt")
     
     def test_interpolation_with_non_string(self):
         v = self.create_with_value("t<noop>t")
-        iv = v.field.interpolate(v, [1])
-        self.assertEqual(iv, "t1t")
+        v.field.interpolate(v, [1])
+        self.assertEqual(v.value, "t1t")
 
 
 class ReferenceTest(unittest.TestCase):

@@ -50,15 +50,20 @@ class Field(object):
     def is_value_supported(self, raw_value) -> bool:
         raise NotImplementedError()
     
-    def normalize(self, raw_value) -> OrderedDict:
+    def normalize(self, raw_value) -> Value:
         raise NotImplementedError()
     
     def get_dependencies(self, normalized_value):
+        """
+        Find parts that can be interpolated and return required deps.
+        Should check only own data, no nested fields.
+        """
         return []
 
-    def interpolate(self, normalized_value, values):
+    def interpolate(self, normalized_value, values) -> None:
         """
-        Should return raw interpolated value.
+        Should replace data in normalized_value with interpolated one.
+        Called only when ``get_dependencies`` finds something.
         """
         raise NotImplementedError()
     
