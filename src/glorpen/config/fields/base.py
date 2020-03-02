@@ -38,14 +38,13 @@ class Field(object):
     To add custom validation based on whole config object use :meth:`.validator`.
     """
 
-    _help = None
-
     # used by Optional wrapper
     default_value = None
 
     def __init__(self, validators=None):
         super().__init__()
         self._validators = list(validators) if validators else []
+        self.help_config = Help()
 
     def is_value_supported(self, raw_value) -> bool:
         raise NotImplementedError()
@@ -84,11 +83,11 @@ class Field(object):
             cb(packed_value, packed_tree)
     
     def help(self, **kwargs):
-        self._help = Help(**kwargs)
+        self.help_config.set(**kwargs)
         return self
     
     def variant(self, **kwargs):
-        self._help.variant(**kwargs)
+        self.help_config.variant(**kwargs)
         return self
 
 class Unset(): pass

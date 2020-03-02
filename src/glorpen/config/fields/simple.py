@@ -40,11 +40,17 @@ class Dict(Field):
 
         self._check_keys = check_keys
         
+        help_items = {}
         if schema is None:
             self._key_field = keys or String()
             self._value_field = values
         else:
             self._schema = schema
+            for k,v in schema.items():
+                help_items[k] = v.help()
+        
+        # TODO: implement support for key/value schema
+        self.help_config.set_children(help_items)
     
     def normalize(self, raw_value):
         # when all subkeys are optional, parent can be omitted
@@ -151,21 +157,6 @@ class Dict(Field):
         else:
             raise NotImplementedError()
     
-    def help(self, **kwargs):
-        if self._schema:
-            h = {}
-            for k,v in self._schema.items():
-                if v._help is None:
-                    v.help()
-                h[k] = v._help
-        else:
-            raise NotImplementedError()
-        
-        # TODO: implement support for key/value schema
-
-        kwargs["children"] = h
-        return super().help(**kwargs)
-
 class String(Field):
     """Converts value to string."""
 
@@ -254,6 +245,8 @@ class List(Field):
         
         self._schema = schema
         self._check_values = check_values
+
+        self.help_config.set_children([self._schema.help_config])
     
     def normalize(self, raw_value):
         return ContainerValue(((i, self._schema.normalize(v)) for i,v in enumerate(raw_value)), self)
@@ -272,15 +265,6 @@ class List(Field):
         for i in interpolated_value.values.values():
             ret.append(self._schema.pack(i))
         return tuple(ret)
-    
-    def help(self, **kwargs):
-        # TODO: make _help private
-        if self._schema._help is None:
-            self._schema.help()
-        
-        kwargs["children"] = [self._schema._help]
-
-        return super().help(**kwargs)
     
 class Variant(Field):
     """Converts value to normalized state using one :class:`.Field` chosen from multiple provided.

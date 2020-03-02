@@ -33,9 +33,7 @@ class Config(object):
         
         normalized_value = self.spec.normalize(raw_value)
         index, required_deps_by_path = self._find_dependencies(normalized_value)
-        resolved_paths = self._resolve_dependencies(index, required_deps_by_path)
-
-        self._inject_resolved_dependencies(resolved_paths, normalized_value)
+        self._resolve_dependencies(index, required_deps_by_path)
 
         packed_tree = self.spec.pack(normalized_value)
         self._validate(index, packed_tree)
@@ -72,6 +70,7 @@ class Config(object):
                 something_was_done = True
 
                 values = []
+                
                 for i in req_deps:
                     values.append(resolved_paths[i] if i in resolved_paths else index[i].value)
                 resolved_paths[req_path] = index[req_path].field.interpolate(index[req_path], values)
@@ -80,14 +79,8 @@ class Config(object):
         if unsolvable_deps:
             raise Exception("Paths could not be solved: %r", unsolvable_deps)
         
-        return resolved_paths
+        # return resolved_paths
     
-    def _inject_resolved_dependencies(self, resolved_paths, normalized_value):
-        for path, value in resolved_paths.items():
-            i = normalized_value
-            for p in path:
-                i = normalized_value.values[p]
-            i.value = value
     
     def _validate(self, index, packed_tree):
         errors = {}
