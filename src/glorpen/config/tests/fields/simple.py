@@ -2,7 +2,7 @@ import unittest
 import pathlib
 
 from glorpen.config.fields.simple import String, Reference, Path, PathObj, Any, Dict, Variant, Number
-from glorpen.config.fields.base import SingleValue
+from glorpen.config.fields.base import SingleValue, Optional
 
 class StringTest(unittest.TestCase):
     def create_with_value(self, s):
@@ -83,6 +83,16 @@ class DictTest(unittest.TestCase):
 
         self.assertIn("a12", result, "First key was interpolated")
         self.assertIn("b34", result, "Second key was interpolated")
+    
+    def test_optional_keys(self):
+        v = Dict({'a': Optional(Any(), default='test')}).normalize({})
+        self.assertEqual(v.field.pack(v), {'a':'test'})
+
+        v = Dict({'a': Optional(Any())}).normalize({})
+        self.assertEqual(v.field.pack(v), {'a':None}, 'Key exists even if no default value provided')
+
+        with self.assertRaisesRegex(Exception, "missing keys", msg="Keys with non optional values should be required"):
+            Dict({'a': Optional(Any()), 'b': Any()}).normalize({})
 
 
 class VariantTest(unittest.TestCase):

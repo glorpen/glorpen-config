@@ -143,3 +143,6 @@ class Optional(Field):
             pass
         
         return self.field.create_packed_value(normalized_value)
+
+def is_optional(field):
+    return isinstance(field, Optional)
