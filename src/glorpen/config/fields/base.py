@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 '''
 .. moduleauthor:: Arkadiusz Dzięgiel <arkadiusz.dziegiel@glorpen.pl>
 '''
 import contextlib
 from collections import OrderedDict
-from glorpen.config.exceptions import ValidationError, CircularDependency
+from glorpen.config import exceptions
 from glorpen.config.translators.base import Help
 
 class Value(object):
@@ -14,7 +13,7 @@ class Value(object):
         super().__init__()
 
         if not isinstance(field, (Field,)):
-            raise Exception("Value %r passed as field is not a field" % field)
+            raise exceptions.ConfigException("Value %r passed as field is not a field" % field)
         
         self.field = field
 

@@ -22,9 +22,13 @@ class Config(object):
     
     def get(self, raw_value):
         if not self.spec.is_value_supported(raw_value):
-            raise Exception("value is not supported")
+            raise exceptions.ConfigException("value is not supported")
         
-        normalized_value = self.spec.normalize(raw_value)
+        try:
+            normalized_value = self.spec.normalize(raw_value)
+        except exceptions.ConfigException as e:
+            raise exceptions.TraceableConfigException(e)
+        
         index, required_deps_by_path = self._find_dependencies(normalized_value)
         self._resolve_dependencies(index, required_deps_by_path)
 

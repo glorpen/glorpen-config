@@ -3,26 +3,27 @@
 .. moduleauthor:: Arkadiusz Dzięgiel <arkadiusz.dziegiel@glorpen.pl>
 '''
 
+import contextlib
+
+@contextlib.contextmanager
+def path_error(key):
+    try:
+        yield
+    except ConfigException as e:
+        if not hasattr(e, "config_path"):
+            e.config_path = []
+        e.config_path.insert(0, key)
+        raise e
+
 class ConfigException(Exception):
     """Base exception for config errors."""
     pass
 
-class ValidationError(ConfigException):
-    """Exception for when there is error in validation of values in fields."""
-    def __init__(self, message, *args):
-        super(ValidationError, self).__init__(message, *args)
-        self._partial_path = []
-
-class PathValidationError(ConfigException):
+class TraceableConfigException(ConfigException):
     """Exception for improved readability - uses :class:`.ValidationError` to provide full path to field with error."""
-    def __init__(self, validation_error):
-        self.path = ".".join(repr(i) for i in validation_error._partial_path)
-        super(PathValidationError, self).__init__(
-            "%s: %s" % (self.path, validation_error)
+    def __init__(self, exception):
+        self.path = ".".join(repr(i) for i in exception.config_path)
+        self.__cause__ = exception
+        super(TraceableConfigException, self).__init__(
+            "At path %s: %s" % (self.path, exception)
         )
-
-class CircularDependency(ConfigException):
-    """Thrown when interpolation causes loop."""
-    def __init__(self, *args, **kwargs):
-        self.__cause__ = None # support for python2: raise Exception() from None
-        super(CircularDependency, self).__init__(*args, **kwargs)

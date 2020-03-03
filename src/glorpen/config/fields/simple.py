@@ -6,7 +6,7 @@ import os
 import re
 import pathlib
 from collections import OrderedDict
-from glorpen.config.exceptions import ValidationError, path_validation_error
+from glorpen.config import exceptions
 from glorpen.config.fields.base import Field, SingleValue, ContainerValue, Optional, is_optional
 
 def take_a_few(iterable, count):
@@ -89,23 +89,23 @@ class Dict(Field):
                 msgs.append("value for %r is not supported" % k)
 
         if msgs:
-            raise ValidationError("Found following errors: %s" % ", ".join(msgs))
+            raise exceptions.ConfigException("Found following errors: %s" % ", ".join(msgs))
         
         return raw_value
     
     def _normalize_with_schema(self, raw_value):
         ret = OrderedDict()
         for k,field in self._schema.items():
-            # with path_validation_error([k]):
-            ret[k] = field.normalize(raw_value.get(k))
+            with exceptions.path_error(key=k):
+                ret[k] = field.normalize(raw_value.get(k))
         return ret
     
     def _normalize(self, raw_value):
         ret = OrderedDict()
         
         for k,v in raw_value.items():
-            # with path_validation_error(k):
-            ret[self._key_field.normalize(k)] = self._value_field.normalize(v)
+            with exceptions.path_error(key=k):
+                ret[self._key_field.normalize(k)] = self._value_field.normalize(v)
         
         return ret
     
@@ -127,8 +127,9 @@ class Dict(Field):
     def create_packed_value(self, normalized_value):
         ret = OrderedDict()
         for k,v in normalized_value.values.items():
-            rk = k.field.pack(k) if self._key_field else k
-            ret[rk] = v.field.pack(v)
+            with exceptions.path_error(key=k):
+                rk = k.field.pack(k) if self._key_field else k
+                ret[rk] = v.field.pack(v)
 
         return ret
     
@@ -167,7 +168,7 @@ class String(Field):
         try:
             return SingleValue(str(raw_value), self)
         except Exception as e:
-            raise ValidationError("Could not convert %r to string, got %r" % (raw_value, e))
+            raise exceptions.ConfigException("Could not convert %r to string, got %r" % (raw_value, e))
     
     def create_packed_value(self, normalized_value):
         return normalized_value.value
@@ -242,7 +243,12 @@ class List(Field):
         self.help_config.set_children([self._schema.help_config])
     
     def normalize(self, raw_value):
-        return ContainerValue(((i, self._schema.normalize(v)) for i,v in enumerate(raw_value)), self)
+        values = []
+        for i,v in enumerate(raw_value):
+            with exceptions.path_error(key=i):
+                values.append(i, self._schema.normalize(v))
+        
+        return ContainerValue(values, self)
     
     def is_value_supported(self, raw_value):
         if not isinstance(raw_value, (tuple, list)):
@@ -255,8 +261,9 @@ class List(Field):
     
     def create_packed_value(self, interpolated_value):
         ret = []
-        for i in interpolated_value.values.values():
-            ret.append(self._schema.pack(i))
+        for k,i in enumerate(interpolated_value.values.items()):
+            with exceptions.path_error(key=k):
+                ret.append(self._schema.pack(i))
         return tuple(ret)
     
 class Variant(Field):
