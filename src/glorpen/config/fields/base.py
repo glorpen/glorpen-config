@@ -101,7 +101,8 @@ class Optional(Field):
         if default is Unset:
             default = field.default_value
         self.default = default
-    
+
+        self.help_config.set(value=self.default)
     
     def is_value_supported(self, raw_value):
         return raw_value is None or self.field.is_value_supported(raw_value)
@@ -142,18 +143,3 @@ class Optional(Field):
             pass
         
         return self.field.create_packed_value(normalized_value)
-    
-    def help(self, **kwargs):
-        if "value" not in kwargs:
-            kwargs["value"] = self.default
-        self.field.help(**kwargs)
-        return self
-    
-    def variant(self, **kwargs):
-        self.field.variant(**kwargs)
-        return self
-    
-    @property
-    def _help(self):
-        # FIXME: make _help private
-        return self.field._help
