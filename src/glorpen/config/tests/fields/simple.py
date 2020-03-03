@@ -1,7 +1,7 @@
 import unittest
 import pathlib
 
-from glorpen.config.fields.simple import String, Reference, Path, PathObj, Any, Dict, Variant, Number
+from glorpen.config.fields.simple import String, Reference, Path, PathObj, Any, Dict, Variant, Number, List
 from glorpen.config.fields.base import SingleValue, Optional
 
 class StringTest(unittest.TestCase):
@@ -100,3 +100,9 @@ class VariantTest(unittest.TestCase):
         f = Variant([Number(), String()])
         self.assertEqual(f.pack(f.normalize("1")), 1, "As number")
         self.assertEqual(f.pack(f.normalize("1a")), "1a", "As string")
+
+class ListTest(unittest.TestCase):
+    def test_normal_case(self):
+        f = List(Any())
+        v = f.normalize(['a', 'b'])
+        self.assertEqual(f.pack(v), ('a', 'b'))

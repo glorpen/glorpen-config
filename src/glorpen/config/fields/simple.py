@@ -246,7 +246,7 @@ class List(Field):
         values = []
         for i,v in enumerate(raw_value):
             with exceptions.path_error(key=i):
-                values.append(i, self._schema.normalize(v))
+                values.append((i, self._schema.normalize(v)))
         
         return ContainerValue(values, self)
     
@@ -261,7 +261,7 @@ class List(Field):
     
     def create_packed_value(self, interpolated_value):
         ret = []
-        for k,i in enumerate(interpolated_value.values.items()):
+        for k,i in interpolated_value.values.items():
             with exceptions.path_error(key=k):
                 ret.append(self._schema.pack(i))
         return tuple(ret)
