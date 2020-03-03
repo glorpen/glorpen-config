@@ -48,4 +48,8 @@ setup (
     "Topic :: Software Development :: Libraries :: Python Modules",
   ],
   test_suite = "glorpen.config.tests",
+  extras_require = {
+      'semver': ['semver>=2.0,<3.0'],
+      'yaml': ['PyYAML>=5.0,<6.0'],
+  }
 )

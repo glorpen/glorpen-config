@@ -6,8 +6,10 @@ Glorpen Config
     :target: https://travis-ci.org/glorpen/glorpen-config
 .. image:: https://readthedocs.org/projects/glorpen-config/badge/?version=latest
     :target: https://glorpen-config.readthedocs.io/en/latest/
+.. image:: https://codecov.io/gh/glorpen/glorpen-config/branch/master/graph/badge.svg
+    :target: https://codecov.io/gh/glorpen/glorpen-config
 
-Config framework for Your projects - with validation, interpolation and value normalization!
+Config framework for Your projects - with validation, interpolation and value normalization. It can even generate default config with help texts!
 
 Official repositories
 =====================
@@ -16,34 +18,49 @@ GitHub: https://github.com/glorpen/glorpen-config
 
 BitBucket: https://bitbucket.org/glorpen/glorpen-config
 
+GitLab: https://gitlab.com/glorpen/glorpen-config
+
 Features
 ========
 
 You can:
 
-- create custom fields for custom data
 - define configuration schema inside Python app
 - convert configuration values to Python objects
-- validate configuration
+- validate user provided data
 - use interpolation to fill config values
-- set default values
+- generate example configuration with help text
 
-Loading data
-------------
+How to load data
+----------------
 
-:class:`glorpen.config.Config` uses :mod:`glorpen.config.loaders` to allow loading data from different sources.
+You can use ``Reader`` to read values from arbitrary source and then pass it to :class:`glorpen.config.Config`:
 
-Loaders should accept:
+.. code-block:: python
 
-- path, ``filepath`` constructor argument
-- file-like object, ``fileobj`` constructor argument
+    from glorpen.config.translators.yaml import YamlReader
+    from glorpen.config import Config
 
-Additionally you can just pass ``dict`` data to config with :meth:`glorpen.config.Config.load_data` or :meth:`glorpen.config.Config.finalize`.
+    config = Config(String())
+    config.get(YamlReader("example.yaml").read())
+
+or with use of :class:`glorpen.config.Translator`:
+
+.. code-block:: python
+
+    from glorpen.config.translators.yaml import YamlReader
+    from glorpen.config import Config, Translator
+
+    translator = Translator(Config(String()))
+    translator.read(YamlReader("example.yaml"))
+
+
+:meth:`glorpen.config.Config.get` accepts anything that is supported by underlying config schema so you can pass ``dict`` or custom objects.
 
 Interpolation
 -------------
 
-You can reuse values from config with ``{{ path.to.value }}`` notation, eg:
+You can reuse values from config with dotted notation, eg: ``{{ path.to.value }}``.
 
 .. code-block:: yaml
 
@@ -51,7 +68,7 @@ You can reuse values from config with ``{{ path.to.value }}`` notation, eg:
       path: "/tmp"
       cache_path: "{{ project.path }}/cache"
 
-String interpolation currently can be used only with :class:`glorpen.config.fields.String` fields.
+See field documentation to find where interpolation is supported.
 
 Normalization and validation
 ----------------------------
@@ -62,18 +79,16 @@ Each field type has own normalization rules, eg. for :class:`glorpen.config.fiel
 
    logging: DEBUG
 
-``config.get("logging")`` would yield value ``10`` as is ``logging.DEBUG``. 
+``config.get(data)`` would yield value ``10`` as in ``logging.DEBUG``. 
 
-Additionally it will raise :class:`glorpen.config.exceptions.ValidationError` if invalid level name is given.
+Additionally it will raise exception if invalid value is provided.
 
-Default values
---------------
+Optional and default values
+---------------------------
 
 Each field can have default value. If no value is given in config but default one is set, it will be used instead.
 
-Default values adhere to same interpolation and normalization rules - each default value is denormalized and then passed to normalizers.
-That way complex object can still profit from config interpolation. There should not be any real impact on performance as it is done only once.
-
+Default values should be already Python values, eg. ``int``, ``str``, objects.
 
 Contents
 ========

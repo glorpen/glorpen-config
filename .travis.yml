@@ -6,7 +6,7 @@ python:
  - "3.8"
 
 install:
-  - pip install -e . codecov coverage
+  - pip install -e .[semver,yaml] codecov coverage
 
 script:
   - test -n "$TRAVIS_TAG" && sed -e "s/development/${TRAVIS_TAG/v}/g" -i src/glorpen/config/__init__.py || true

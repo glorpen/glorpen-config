@@ -11,6 +11,13 @@
    
       Current package version.
 
+:mod:`glorpen.config.config`
+----------------------------
+
+.. automodule:: glorpen.config.config
+   :members:
+   :special-members: __init__
+
 :mod:`glorpen.config.fields.base`
 ---------------------------------
 
@@ -40,13 +47,19 @@
    :special-members: __init__
 
 
-:mod:`glorpen.config.loaders`
------------------------------
+:mod:`glorpen.config.translators.base`
+--------------------------------------
 
-.. automodule:: glorpen.config.loaders
+.. automodule:: glorpen.config.translators.base
    :members:
-   :private-members:
-   :no-undoc-members:
+   :special-members: __init__
+
+:mod:`glorpen.config.translators.yaml`
+--------------------------------------
+
+.. automodule:: glorpen.config.translators.yaml
+   :members:
+   :special-members: __init__
 
 :mod:`glorpen.config.exceptions`
 --------------------------------
