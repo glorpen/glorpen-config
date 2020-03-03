@@ -6,7 +6,7 @@ import os
 import re
 import pathlib
 from collections import OrderedDict
-from glorpen.config.exceptions import ValidationError
+from glorpen.config.exceptions import ValidationError, path_validation_error
 from glorpen.config.fields.base import Field, SingleValue, ContainerValue, Optional
 
 def take_a_few(iterable, count):
@@ -71,6 +71,7 @@ class Dict(Field):
         val_keys = set(raw_value.keys())
         
         for def_k, def_v in self._schema.items():
+            # TODO: fix optionals handling
             try:
                 if def_v.allow_blank or def_v.has_valid_default():
                     spec_blanks.add(def_k)
