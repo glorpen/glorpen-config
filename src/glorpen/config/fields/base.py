@@ -121,12 +121,6 @@ class Optional(Field):
         return self.field.get_dependencies(normalized_value)
     
     def interpolate(self, normalized_value, values):
-        try:
-            if normalized_value.value is Unset:
-                return self.default
-        except AttributeError:
-            pass
-        
         self.field.interpolate(normalized_value, values)
     
     def create_packed_value(self, normalized_value):
