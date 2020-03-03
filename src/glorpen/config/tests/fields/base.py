@@ -1,6 +1,7 @@
 import unittest
 
 from glorpen.config.fields import base as org
+from glorpen.config.fields.simple import String, Any, List
 
 class FakeField(org.Field):
     pass
@@ -15,9 +16,17 @@ class ContainerValueTest(unittest.TestCase):
         self.assertEqual(v.values["key"], "value", "handling simple key and value")
         self.assertEqual(v.values[FakeField], "other value", "handling object as key")
 
-# class FieldTest(unittest.TestCase):
-#     def test_packing(self):
-#         #check if packed attr is set on value
-#         pass
-#     def test_validation(self):
-#         pass
+class OptionalTest(unittest.TestCase):
+    def test_interpolation(self):
+        f = org.Optional(String(), default='{asd}')
+        v = f.normalize(None)
+        self.assertEqual(f.get_dependencies(v), [])
+        self.assertEqual(f.pack(v), '{asd}', "Default values are not interpolated")
+
+        v = f.normalize('{asd}')
+        self.assertEqual(f.get_dependencies(v), (('asd',),), "Non default values are interpolated")
+
+    def test_optional_container_value(self):
+        f = org.Optional(List(Any()))
+        v = f.normalize(None)
+        self.assertEqual(f.pack(v), [])

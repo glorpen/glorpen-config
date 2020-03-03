@@ -108,27 +108,26 @@ class Optional(Field):
     
     def normalize(self, raw_value):
         if raw_value is None:
-            return SingleValue(self.default, self)
+            return SingleValue(Unset, self)
         return self.field.normalize(raw_value)
     
     def get_dependencies(self, normalized_value):
         try:
-            if normalized_value.values is None:
+            if normalized_value.value is Unset:
                 return []
         except AttributeError:
-            if normalized_value.value is None:
-                return []
+            pass
         
         return self.field.get_dependencies(normalized_value)
     
     def interpolate(self, normalized_value, values):
         try:
-            if normalized_value.value is self.default:
+            if normalized_value.value is Unset:
                 return self.default
         except AttributeError:
             pass
         
-        return self.field.interpolate(normalized_value, values)
+        self.field.interpolate(normalized_value, values)
     
     def create_packed_value(self, normalized_value):
         # when we use default value but self.field is a list or dict
@@ -136,7 +135,7 @@ class Optional(Field):
         # if SingleValue is used by self.field then we should check
         # if given value is default
         try:
-            if normalized_value.value is self.default:
+            if normalized_value.value is Unset:
                 return self.default
         except AttributeError:
             pass
