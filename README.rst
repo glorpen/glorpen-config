@@ -108,7 +108,7 @@ Your first step should be defining configuration schema:
    
    spec = fs.Dict({
      "project_path": fb.Optional(fs.Path(), default=project_path),
-     "project_cache_path": fb.Optional(fs.Path(), default="{{ project_path }}/cache"),
+     "project_cache_path": fb.Optional(fs.Path(), default=project_path + "/cache"),
      "logging": LogLevel(default=logging.INFO),
      "database": fs.String(),
      "sources": fs.Dict({
