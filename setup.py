@@ -32,10 +32,10 @@ setup (
   author = "Arkadiusz Dzięgiel",
   author_email = "arkadiusz.dziegiel@glorpen.pl",
   description = "Loads, validates and normalizes configuration.",
-  tests_require = ["mock"] if sys.hexversion < 0x03030000 else [],
+  tests_require = [],
   url = "https://github.com/glorpen/glorpen-config",
   license = "GPLv3+",
-  long_description= long_description,
+  long_description = long_description,
   classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
