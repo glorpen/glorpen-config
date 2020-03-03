@@ -1,5 +1,4 @@
-#!/usr/bin/env python2
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
 #
 # glorpen-config documentation build configuration file, created by
 # sphinx-quickstart on Sun Dec 13 12:18:52 2015.
@@ -16,8 +15,16 @@
 import sys
 import os
 import shlex
+import subprocess
 
-sys.path.append("%s/src" % os.path.dirname(os.path.dirname(__file__)))
+project_dir = os.path.dirname(os.path.dirname(__file__))
+sys.path.append(f"{project_dir}/src")
+
+git_tag = subprocess.check_output(["git", "describe", "--tags"]).decode().strip()
+if git_tag:
+    version = git_tag[1:]
+else:
+    version = "development"
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -63,7 +70,6 @@ author = u'Arkadiusz Dzięgiel'
 # built documents.
 #
 # The short X.Y version.
-from glorpen.config import __version__ as version
 # The full version, including alpha/beta/rc tags.
 release = version
 
