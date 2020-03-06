@@ -4,7 +4,7 @@
 import contextlib
 from collections import OrderedDict
 from glorpen.config import exceptions
-from glorpen.config.translators.base import Help
+from glorpen.config.translators.base import Help, ContainerHelp
 
 class Value(object):
     packed = None
@@ -39,11 +39,12 @@ class Field(object):
 
     # used by Optional wrapper
     default_value = None
+    help_class = Help
 
     def __init__(self, validators=None):
         super().__init__()
         self._validators = list(validators) if validators else []
-        self.help_config = Help()
+        self.help_config = self.help_class()
 
     def is_value_supported(self, raw_value) -> bool:
         raise NotImplementedError()
@@ -84,14 +85,12 @@ class Field(object):
     def help(self, **kwargs):
         self.help_config.set(**kwargs)
         return self
-    
-    def variant(self, **kwargs):
-        self.help_config.variant(**kwargs)
-        return self
 
 class Unset(): pass
 
 class Optional(Field):
+    help_class = ContainerHelp
+
     """Field wrapper for nullable fields with defaults."""
     def __init__(self, field, default=Unset):
         super().__init__()
@@ -101,7 +100,8 @@ class Optional(Field):
             default = field.default_value
         self.default = default
 
-        self.help_config.set(value=self.default)
+        self.help_config.set_children(self.field.help_config)
+        self.help_config.set_value(self.default)
     
     def is_value_supported(self, raw_value):
         return raw_value is None or self.field.is_value_supported(raw_value)
@@ -135,6 +135,6 @@ class Optional(Field):
             pass
         
         return self.field.create_packed_value(normalized_value)
-
+    
 def is_optional(field):
     return isinstance(field, Optional)

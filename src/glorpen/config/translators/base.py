@@ -1,15 +1,10 @@
 import contextlib
 
-class Help(object):
-    has_value = False
+class BaseHelp(object):
     has_description = False
-    has_children = False
-    has_variants = False
 
     def __init__(self, **kwargs):
         super().__init__()
-
-        self.variants = []
 
         self.set(**kwargs)
 
@@ -17,23 +12,54 @@ class Help(object):
         for k,v in kwargs.items():
             getattr(self, "set_" + k)(v)
         return self
-    
-    def variant(self, **kwargs):
-        self.variants.append(self.__class__(**kwargs))
-        self.has_variants = True
-        return self
 
     def set_description(self, v):
         self.description = v
         self.has_description = True
+
+    has_value = False
     
     def set_value(self, v):
         self.value = v
         self.has_value = True
+
+class HelpVariant(BaseHelp):
+    pass
+
+class Help(object):
+    has_variants = False
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self.variants = []
     
-    def set_children(self, v):
-        self.children = v
-        self.has_children = True
+    def set(self, **kwargs):
+        self.variants.append(HelpVariant(**kwargs))
+        self.has_variants = True
+        return self
+
+class ContainerHelp(BaseHelp):
+    are_children_list = False
+    are_children_hash = False
+    are_children_alts = False
+
+    children = None
+
+    # [] => list
+    # {} => dict
+    # a,b,c => options (eg.Variant field)
+    def set_children(self, *args):
+        
+        if isinstance(args[0], dict):
+            self.are_children_hash = True
+            self.children = args[0]
+        elif isinstance(args[0], (tuple, list)):
+            self.are_children_list = True
+            self.children = args[0]
+        else:
+            self.are_children_alts = True
+            self.children = args
 
 @contextlib.contextmanager
 def visitor(self, tag, *args):
@@ -54,21 +80,27 @@ def visitor(self, tag, *args):
 class Renderer(object):
     def visit(self, help):
         with visitor(self, "node", help):
-            if help.has_variants:
-                for variant in help.variants:
-                    with visitor(self, "variant", variant):
-                        pass
-            if help.has_children:
+            if hasattr(help, "variants"):
+                with visitor(self, "node.variants", help):
+                    for variant in help.variants:
+                        with visitor(self, "variant", variant, help):
+                            pass
+            if hasattr(help, "children"):
                 with visitor(self, "container", help):
-                    if isinstance(help.children, (dict,)):
+                    if help.are_children_hash:
                         with visitor(self, "container.hash", help):
                             for k,v in help.children.items():
                                 with visitor(self, "item.hash", k, v):
                                     self.visit(v)
-                    else:
+                    elif help.are_children_list:
                         with visitor(self, "container.list", help):
                             for v in help.children:
                                 with visitor(self, "item.list", v):
+                                    self.visit(v)
+                    else:
+                        with visitor(self, "container.alternative", help):
+                            for v in help.children:
+                                with visitor(self, "item.alternative", v):
                                     self.visit(v)
 
     def reset(self):

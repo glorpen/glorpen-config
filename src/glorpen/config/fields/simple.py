@@ -8,6 +8,7 @@ import pathlib
 from collections import OrderedDict
 from glorpen.config import exceptions
 from glorpen.config.fields.base import Field, SingleValue, ContainerValue, Optional, is_optional
+from glorpen.config.translators.base import ContainerHelp
 
 def take_a_few(iterable, count):
     i = 0
@@ -25,6 +26,7 @@ class Dict(Field):
     """
     
     default_value = {}
+    help_class = ContainerHelp
 
     _schema = None
     _key_field = None
@@ -47,7 +49,7 @@ class Dict(Field):
         else:
             self._schema = schema
             for k,v in schema.items():
-                help_items[k] = v.help()
+                help_items[k] = v.help_config
         
         # TODO: implement support for key/value schema
         self.help_config.set_children(help_items)
@@ -233,6 +235,7 @@ class List(Field):
     """Converts value to list."""
 
     default_value = []
+    help_class = ContainerHelp
     
     def __init__(self, schema, check_values=False, **kwargs):
         super(List, self).__init__(**kwargs)
@@ -272,9 +275,13 @@ class Variant(Field):
     To allow blank values you have to pass child field with enabled blank values.
     First field which supports value (:meth:`.Field.is_value_supported`) will be used to convert it.
     """
+
+    help_class = ContainerHelp
+
     def __init__(self, schema, *args, **kwargs):
         super(Variant, self).__init__(*args, **kwargs)
         self._values_fields = schema
+        self.help_config.set_children(*[f.help_config for f in schema])
     
     def normalize(self, raw_value):
         return self._get_matching_field(raw_value).normalize(raw_value)

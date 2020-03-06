@@ -1,20 +1,24 @@
 import yaml
 import textwrap
+import itertools
 from glorpen.config.translators.base import Renderer, Reader
+from io import StringIO
 
 class YamlRenderer(Renderer):
     def reset(self):
-        self._data = []
+        self._data = StringIO()
         self._key = []
-        self._depth = 0
-
-        self._entered_list_item = False
+        self._value_prefix = []
+        self._first_list_item = False
+        self._parent_containers = []
 
     def finish(self):
-        return "\n".join(self._data)
+        ret = self._data.getvalue()
+        self._data.close()
+        return ret
 
-    def padding(self):
-        return " " * (self._depth * 2)
+    def padding(self, diff = 0):
+        return " " * ((len(self._key) + diff) * 2)
     
     def render_value(self, value):
         ret_v = yaml.dump(value, explicit_start=False, explicit_end=False).strip()
@@ -22,68 +26,89 @@ class YamlRenderer(Renderer):
             ret_v = ret_v[:-4].strip()
         return ret_v
     
-    def render_value_with_key(self, value):
-        if self._key and self._key[-1] is not None:
-            return self.render_value({self._key[-1]:value})
+    def render_current_parent_key(self):
+        k = self._key[-1]
+        if k is None:
+            return '- '
         else:
-            return self.render_value(value)
-
-    def render_description(self, node):
-        return [(self.padding() + "# " + i) for i in textwrap.wrap(node.description, 60)]
-
-    def render_item_value(self, node, commented = False):
-        if node.has_description:
-            if self._key and not commented:
-                yield ""
-            yield from self.render_description(node)
-        
-        if node.has_value:
-            prefix = "#" if commented else ""
-            if self._entered_list_item:
-                yield self.padding() + prefix + "- " + self.render_value_with_key(node.value)
-            else:
-                yield self.padding() + prefix + self.render_value_with_key(node.value)
+            return f'{k}: '
     
+    def get_current_nested_lists_count(self):
+        return len(list(itertools.takewhile(lambda x: x is None, reversed(self._key))))
+    
+    def get_current_container(self):
+        return self._parent_containers[-1] if self._parent_containers else None
+
+    def render_value_as_variant(self, value, comment=''):
+        z = -1
+        # when in nested list item, parent key list is on same line
+        key_repeat_count = 1
+        if self._first_list_item:
+            key_repeat_count = self.get_current_nested_lists_count()
+            z = z - key_repeat_count + 1
+
+        return self.padding(z) + (self.render_current_parent_key() * key_repeat_count) + self.render_value(value) + comment + '\n'
+
+
     def visit_node(self, node):
-        # skip if not root node
-        if node.has_children and self._key:
-            return
-        
-        self._data.extend(self.render_item_value(node))
-        for n in node.variants:
-            self._data.extend(self.render_item_value(n, True))
-        
-        if node.has_value and self._entered_list_item:
-            self._entered_list_item = False
+        if hasattr(node, "description"):
+            self._data.write(self.padding(-1) + f"# {node.description}\n")
     
+    def visit_variant(self, variant, node):
+        if variant.has_description:
+            self._data.write(self.padding(-1) + f"# {variant.description}" + "\n")
+        
+        if variant.has_value:
+            value = variant.value
+            comment = ''
+        else:
+            value = 'something'
+            comment = ' # required and no default'
+        
+        self._data.write(self.render_value_as_variant(value, comment))
+    
+    def leave_variant(self, variant, node):
+        self._first_list_item = False
+
+    def visit_node_variants(self, node):
+        if not node.variants:
+            parent = self.get_current_container()
+            if parent and parent.has_value:
+                self._data.write(self.render_value_as_variant(parent.value))
+            else:
+                self._data.write(self.render_value_as_variant('something', ' # required and no default'))
+
+    def leave_node_variants(self, node):
+        # when no variants exist in this node
+        self._first_list_item = False
+
     def visit_item_hash(self, k, node):
         self._key.append(k)
-        if not node.has_value:
-                
-            if node.has_description:
-                self._data.append("")
-                self._data.extend(self.render_description(node))
-        
-            if self._entered_list_item:
-                self._data.append(self.padding() + "- " + self.render_value(k) + ":")
-                self._entered_list_item = False
-            else:
-                self._data.append(self.padding() + self.render_value(k) + ":")
-            self._depth += 1
-    
+
     def leave_item_hash(self, k, node):
         self._key.pop()
-        if not node.has_value:
-            self._depth -= 1
-    
+
     def visit_item_list(self, node):
         self._key.append(None)
-        self._entered_list_item = True
-        self._depth -= 1
     
     def leave_item_list(self, node):
         self._key.pop()
-        self._depth += 1
+        self._first_list_item = False
+
+    def visit_container(self, node):
+        self._parent_containers.append(node)
+    
+    def leave_container(self, node):
+        self._parent_containers.pop()
+    
+    def visit_container_list(self, node):
+        self._first_list_item = True
+        if self._key and self._key[-1] is not None:
+            self._data.write(self.padding(-1) + self.render_current_parent_key() + "\n")
+    
+    def visit_container_hash(self, node):
+        if self._key:
+            self._data.write(self.padding(-1) + self.render_current_parent_key() + "\n")
 
 class YamlReader(Reader):
     def __init__(self, path):
