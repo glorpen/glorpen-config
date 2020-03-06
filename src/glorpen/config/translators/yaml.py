@@ -43,7 +43,7 @@ class YamlRenderer(Renderer):
         if ret:
             ret.append(self._key[-1])
         else:
-            if len(self._key) == 1 and self._key[0] is None:
+            if len(self._key) > 0 and self._key[-1] is None:
                 ret.append(None)
 
         return ret
