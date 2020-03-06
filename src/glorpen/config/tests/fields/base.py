@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import Mock
 
 from glorpen.config.fields import base as org
 from glorpen.config.fields.simple import String, Any, List
@@ -30,3 +31,17 @@ class OptionalTest(unittest.TestCase):
         f = org.Optional(List(Any()))
         v = f.normalize(None)
         self.assertEqual(f.pack(v), [])
+
+class FieldTest(unittest.TestCase):
+    def test_default_dependencies(self):
+        self.assertEqual(org.Field().get_dependencies("something"), [], "No field dependencies by default")
+
+    def test_help_args_passing(self):
+        f = org.Field()
+        m = Mock(['set'])
+        f.help_config = m
+        f.help(value=1).help(value=2)
+        
+        self.assertEqual(m.set.call_count, 2)
+        m.set.assert_any_call(value=1)
+        m.set.assert_any_call(value=2)
