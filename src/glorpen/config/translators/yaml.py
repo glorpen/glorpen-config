@@ -110,7 +110,7 @@ class YamlRenderer(Renderer):
     def leave_item_list(self, node):
         self._key.pop()
         self._first_list_item = False
-
+    
     def visit_container(self, node):
         self._parent_containers.append(node)
     
@@ -126,6 +126,11 @@ class YamlRenderer(Renderer):
         if self._key and self._key[-1] is not None:
             self._data.write(self.padding(-1) + self.render_current_parent_key() + "\n")
     
+    def visit_item_alternative(self, node):
+        # if alternatives parent is a list, treat each child as new list entry
+        if self._parent_containers[-2].are_children_list:
+            self._first_list_item = True
+
     # def visit_any(self, tag, node, *args):
     #     self._data.write(f"<{tag}>\n")
     # def leave_any(self, tag, node, *args):

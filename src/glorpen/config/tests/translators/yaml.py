@@ -1,7 +1,7 @@
 import unittest
 import yaml
 
-from glorpen.config.fields.simple import Dict, List, Any
+from glorpen.config.fields.simple import Dict, List, Any, Variant
 from glorpen.config.translators.yaml import YamlRenderer
 
 class YamlRendererTest(unittest.TestCase):
@@ -24,3 +24,14 @@ class YamlRendererTest(unittest.TestCase):
         f = List(Any().help(value="test"))
         out = self._render_and_load(f)
         self.assertEqual(out, ['test'])
+
+    def test_alternative_nested_lists(self):
+        f = List(
+            Variant([
+                Dict({'a':Any().help(value=1), 'i':Any().help(value=1)}),
+                Dict({'b':Any().help(value=1)}),
+            ])
+        )
+
+        out = self._render_and_load(f)
+        self.assertEqual(out, [{'a':1, 'i':1}, {'b':1}])
