@@ -20,6 +20,7 @@ import subprocess
 project_dir = os.path.dirname(os.path.dirname(__file__))
 sys.path.append(f"{project_dir}/src")
 
+subprocess.call(["git", "fetch", "--tags"])
 git_tag = subprocess.check_output(["git", "describe", "--tags"]).decode().strip()
 if git_tag:
     version = git_tag[1:]
