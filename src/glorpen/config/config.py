@@ -6,6 +6,8 @@ import textwrap
 import types
 import typing
 
+_NoneType = types.NoneType if hasattr(types, "NoneType") else type(None)
+
 
 class ConfigType(abc.ABC):
     def __init__(self, config):
@@ -64,8 +66,7 @@ class Config:
 
     @classmethod
     def _handle_optional_values(cls, type, default_factory):
-        if (type is types.NoneType) or (
-                typing.get_origin(type) is typing.Union and types.NoneType in typing.get_args(type)):
+        if (type is _NoneType) or (typing.get_origin(type) is typing.Union and _NoneType in typing.get_args(type)):
             return None
         if default_factory:
             return default_factory()
