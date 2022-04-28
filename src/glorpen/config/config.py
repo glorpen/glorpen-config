@@ -34,7 +34,8 @@ class DictValueError(ValueError):
     def _format_row(self, items: ValueErrorItems):
         return textwrap.indent("\n".join(self._format_items(items)), "")
 
-    def _format_items(self, items: ValueErrorItems):
+    @classmethod
+    def _format_items(cls, items: ValueErrorItems):
         if hasattr(items, "keys"):
             key_max_len = max(len(str(i)) for i in items.keys())
             item_sets = items.items()
