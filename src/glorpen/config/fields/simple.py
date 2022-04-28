@@ -1,7 +1,7 @@
 import itertools
 import typing
 
-from glorpen.config.config import ConfigType, DictValueError
+from glorpen.config.config import ConfigType, CollectionValueError
 
 
 class UnionType(ConfigType):
@@ -17,7 +17,7 @@ class UnionType(ConfigType):
             except ValueError as e:
                 errors.append(e)
 
-        raise DictValueError(errors)
+        raise CollectionValueError(errors)
 
 
 class SimpleTypes(ConfigType):
@@ -49,7 +49,7 @@ class SequenceTypes(ConfigType):
                 errors[i+1] = ValueError("Extra value")
 
             if errors:
-                raise DictValueError(errors)
+                raise CollectionValueError(errors)
 
             return tuple(ret)
 

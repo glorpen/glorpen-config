@@ -32,11 +32,10 @@ class ConfigValueError(ValueError):
         super(ConfigValueError, self).__init__(f"Found validation errors:\n{error}")
 
 
-class DictValueError(ValueError):
+class CollectionValueError(ValueError):
     def __init__(self, items: ValueErrorItems):
-        # msg = "Invalid fields.\n" + self._format_row(items)
         msg = self._format_row(items)
-        super(DictValueError, self).__init__(msg)
+        super(CollectionValueError, self).__init__(msg)
 
     def _format_row(self, items: ValueErrorItems):
         return textwrap.indent("\n".join(self._format_items(items)), "")
@@ -123,7 +122,7 @@ class Config:
                 errors[field.name] = e
 
         if errors:
-            raise DictValueError(errors)
+            raise CollectionValueError(errors)
 
         instance = cls(**kwargs)
         if self._validator:
