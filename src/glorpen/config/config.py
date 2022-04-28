@@ -1,7 +1,5 @@
-# from glorpen.config.fields import path_validation_error
 import abc
 import dataclasses
-import itertools
 import textwrap
 import types
 import typing
@@ -101,6 +99,17 @@ class Config:
         else:
             return None
 
+    @classmethod
+    def _validate_model(cls, model):
+        if hasattr(model, "_validate"):
+            try:
+                model._validate()
+            except AssertionError as e:
+                msg = "Validation failed"
+                if len(e.args) > 0:
+                    msg = str(e)
+                raise ValueError(msg)
+
     def _from_dataclass(self, data: typing.Dict, cls, path: str):
         kwargs = {}
         errors = {}
@@ -114,7 +123,9 @@ class Config:
         if errors:
             raise DictValueError(errors)
 
-        return cls(**kwargs)
+        instance = cls(**kwargs)
+        self._validate_model(instance)
+        return instance
 
     def _from_type(self, data: typing.Any, type, args: typing.Tuple, metadata: dict, path: str):
         for reg_type in self._registered_types:

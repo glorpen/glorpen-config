@@ -4,6 +4,7 @@ import typing
 import pytest
 
 from glorpen.config.config import Config
+from glorpen.config.fields.simple import SimpleTypes
 
 
 class TestConfig:
@@ -32,3 +33,33 @@ class TestConfig:
         assert m.factory_field == "default-value"
         assert m.value_field == "default-value"
         assert m.optional_field is None
+
+    def test_validation_with_asserts(self):
+        c = Config()
+        c.register(SimpleTypes)
+
+        @dataclasses.dataclass
+        class Data:
+            password: str
+            password_repeated: str
+
+            def _validate(self):
+                assert self.password == self.password_repeated, "Bad password"
+
+        with pytest.raises(ValueError, match="Bad password"):
+            c.to_model({
+                "password": "test1",
+                "password_repeated": "test2"
+            }, Data)
+
+    def test_validation_with_exception(self):
+        c = Config()
+        c.register(SimpleTypes)
+
+        @dataclasses.dataclass
+        class Data:
+            def _validate(self):
+                raise ValueError("Bad value")
+
+        with pytest.raises(ValueError, match="Bad value"):
+            c.to_model({}, Data)
