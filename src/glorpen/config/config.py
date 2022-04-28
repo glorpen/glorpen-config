@@ -20,7 +20,7 @@ class ConfigType(abc.ABC):
         self._converter = converter
 
     @abc.abstractmethod
-    def to_model(self, data: typing.Any, type, args: typing.Tuple, metadata: dict):
+    def to_model(self, data: typing.Any, tp, args: typing.Tuple, metadata: dict):
         pass
 
 
@@ -91,14 +91,16 @@ class Config:
             return self._from_dataclass(data, type)
         else:
             origin = typing.get_origin(type)
+            if metadata is None:
+                metadata = {}
             if origin is None:
                 return self._from_type(data=data, type=type, args=(), metadata=metadata)
             else:
                 return self._from_type(data=data, type=origin, args=typing.get_args(type), metadata=metadata)
 
-    def to_model(self, data, cls):
+    def to_model(self, data, cls, metadata=None):
         try:
-            return self._as_model(data, cls)
+            return self._as_model(data, cls, metadata=metadata)
         except ValueError as e:
             raise ConfigValueError(e) from None
 
@@ -114,6 +116,7 @@ class Config:
     def _from_dataclass(self, data: typing.Dict, cls):
         kwargs = {}
         errors = {}
+        # TODO: error on when more fields are provided
         for field in dataclasses.fields(cls):
             try:
                 kwargs[field.name] = self._as_model(data.get(field.name), field.type, metadata=field.metadata,
@@ -131,7 +134,7 @@ class Config:
 
     def _from_type(self, data: typing.Any, type, args: typing.Tuple, metadata: dict):
         for reg_type in self._registered_types:
-            value = reg_type.to_model(data=data, type=type, args=args, metadata=metadata)
+            value = reg_type.to_model(data=data, tp=type, args=args, metadata=metadata)
             if value is not None:
                 return value
 

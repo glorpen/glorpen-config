@@ -6,8 +6,8 @@ from glorpen.config.config import ConfigType, CollectionValueError
 
 
 class UnionType(ConfigType):
-    def to_model(self, data: typing.Any, type, args: typing.Tuple, metadata: dict):
-        if type is typing.Union:
+    def to_model(self, data: typing.Any, tp, args: typing.Tuple, metadata: dict):
+        if tp is typing.Union:
             return self._try_each_type(data, args, metadata=metadata)
 
     def _try_each_type(self, data, types, metadata=None):
@@ -31,9 +31,11 @@ class SimpleTypes(ConfigType):
         except Exception as e:
             raise ValueError(f"{e.__class__.__name__}: {e}")
 
-    def to_model(self, data: typing.Any, type, args: typing.Tuple, metadata: dict):
-        if type in (int, str, float):
-            return self._try_convert(data, type)
+    def to_model(self, data: typing.Any, tp, args: typing.Tuple, metadata: dict):
+        if tp in (int, str, float, list):
+            return self._try_convert(data, tp)
+        if tp is typing.Any:
+            return data
 
 
 class BooleanType(ConfigType):
@@ -48,8 +50,8 @@ class BooleanType(ConfigType):
         True
     ]
 
-    def to_model(self, data: typing.Any, type, args: typing.Tuple, metadata: dict):
-        if type is bool:
+    def to_model(self, data: typing.Any, tp, args: typing.Tuple, metadata: dict):
+        if tp is bool:
             if isinstance(data, str):
                 data = data.lower()
             return self.is_truthful(data)
@@ -57,9 +59,10 @@ class BooleanType(ConfigType):
     def is_truthful(self, value):
         return value in self._truthful
 
+
 class CollectionTypes(ConfigType):
-    def to_model(self, data: typing.Any, type, args: typing.Tuple, metadata: dict):
-        if type is tuple:
+    def to_model(self, data: typing.Any, tp, args: typing.Tuple, metadata: dict):
+        if tp is tuple:
             errors = {}
             ret = []
 
@@ -77,94 +80,31 @@ class CollectionTypes(ConfigType):
 
             return tuple(ret)
 
-#
-# class PathObj(Path):
-#     """Converts value to :class:`pathlib.Path` object."""
-#
-#     def normalize(self, raw_value):
-#         normalized_value = super(PathObj, self).normalize(raw_value)
-#         normalized_value.value = pathlib.Path(normalized_value.value)
-#         return normalized_value
-#
-#     def get_dependencies(self, normalized_value):
-#         sv = SingleValue(str(normalized_value.value), self)
-#         return super().get_dependencies(sv)
-#
-#     def interpolate(self, normalized_value, values):
-#         sv = SingleValue(str(normalized_value.value), self)
-#         interpolated = super().interpolate(sv, values)
-#         return pathlib.Path(interpolated)
-#
-# class List(Field):
-#     """Converts value to list."""
-#
-#     default_value = []
-#     help_class = ContainerHelp
-#
-#     def __init__(self, schema, check_values=False, **kwargs):
-#         super(List, self).__init__(**kwargs)
-#
-#         self._schema = schema
-#         self._check_values = check_values
-#
-#         self.help_config.set_children([self._schema.help_config])
-#
-#     def normalize(self, raw_value):
-#         values = []
-#         for i,v in enumerate(raw_value):
-#             with exceptions.path_error(key=i):
-#                 values.append((i, self._schema.normalize(v)))
-#
-#         return ContainerValue(values, self)
-#
-#     def is_value_supported(self, raw_value):
-#         if not isinstance(raw_value, (tuple, list)):
-#             return False
-#         if self._check_values:
-#             for i in raw_value:
-#                 if not self._schema.is_value_supported(i):
-#                     return False
-#         return True
-#
-#     def create_packed_value(self, interpolated_value):
-#         ret = []
-#         for k,i in interpolated_value.values.items():
-#             with exceptions.path_error(key=k):
-#                 ret.append(self._schema.pack(i))
-#         return tuple(ret)
-#
-# class Any(Field):
-#     """Field that accepts any value."""
-#     def is_value_supported(self, raw_value):
-#         return True
-#     def create_packed_value(self, normalized_value):
-#         return normalized_value.value
-#     def normalize(self, raw_value):
-#         return SingleValue(raw_value, self)
-#
-# class Choice(Field):
-#     def __init__(self, choices):
-#         super().__init__()
-#
-#         self._choices = choices
-#
-#     def is_value_supported(self, raw_value):
-#         try:
-#             hash(raw_value)
-#         except TypeError:
-#             return False
-#         return True
-#
-#     def normalize(self, raw_value):
-#         if raw_value not in self._choices:
-#             raise Exception("Unsupported value %r" % raw_value)
-#
-#         if isinstance(self._choices, (tuple, list)):
-#             v = raw_value
-#         else:
-#             v = self._choices[raw_value]
-#
-#         return SingleValue(v, self)
-#
-#     def create_packed_value(self, normalized_value):
-#         return normalized_value.value
+
+class LiteralType(ConfigType):
+    def to_model(self, data: typing.Any, tp, args: typing.Tuple, metadata: dict):
+        if data in args:
+            return data
+
+        raise ValueError("Not one of: " + ', '.join(repr(a) for a in args))
+
+
+class PathType(ConfigType):
+    def to_model(self, data: typing.Any, tp, args: typing.Tuple, metadata: dict):
+        p = pathlib.Path(data)
+
+        try:
+            if metadata.get("expand", False):
+                p = p.expanduser()
+            if metadata.get("absolute", False):
+                p = p.resolve()
+        except RuntimeError as e:
+            raise ValueError(e)
+
+        if metadata.get("existing", False):
+            try:
+                p.resolve(True)
+            except OSError as e:
+                raise ValueError(e)
+
+        return p
