@@ -9,10 +9,15 @@ from glorpen.config.validation import Validator
 _NoneType = types.NoneType if hasattr(types, "NoneType") else type(None)
 
 
+class DataConverter(typing.Protocol):
+    def __call__(self, data: typing.Any, type, metadata=None, default_factory=None):
+        pass
+
+
 class ConfigType(abc.ABC):
-    def __init__(self, config):
+    def __init__(self, converter: DataConverter):
         super(ConfigType, self).__init__()
-        self.config = config
+        self._converter = converter
 
     @abc.abstractmethod
     def as_model(self, data: typing.Any, type, args: typing.Tuple, metadata: dict):
@@ -79,7 +84,7 @@ class Config:
 
         raise ValueError("No value provided")
 
-    def as_model(self, data: typing.Any, type, metadata=None, default_factory=None):
+    def _as_model(self, data: typing.Any, type, metadata=None, default_factory=None):
         if data is None:
             return self._handle_optional_values(type, default_factory)
 
@@ -94,7 +99,7 @@ class Config:
 
     def to_model(self, data, cls):
         try:
-            return self.as_model(data, cls)
+            return self._as_model(data, cls)
         except ValueError as e:
             raise ConfigValueError(e) from None
 
@@ -112,7 +117,7 @@ class Config:
         errors = {}
         for field in dataclasses.fields(cls):
             try:
-                kwargs[field.name] = self.as_model(data.get(field.name), field.type, metadata=field.metadata,
+                kwargs[field.name] = self._as_model(data.get(field.name), field.type, metadata=field.metadata,
                     default_factory=self._get_default_factory(field))
             except ValueError as e:
                 errors[field.name] = e
@@ -134,4 +139,4 @@ class Config:
         raise ValueError(f"Could not convert to {type}")
 
     def register_type(self, type_cls: typing.Type[ConfigType]):
-        self._registered_types.append(type_cls(self))
+        self._registered_types.append(type_cls(self._as_model))

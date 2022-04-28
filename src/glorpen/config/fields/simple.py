@@ -13,7 +13,7 @@ class UnionType(ConfigType):
         errors = []
         for tp in types:
             try:
-                return self.config.as_model(data, tp, metadata=metadata)
+                return self._converter(data, tp, metadata=metadata)
             except ValueError as e:
                 errors.append(e)
 
@@ -41,7 +41,7 @@ class SequenceTypes(ConfigType):
 
             for index, (tp, value) in enumerate(itertools.zip_longest(args, data)):
                 try:
-                    ret.append(self.config.as_model(value, tp))
+                    ret.append(self._converter(value, tp))
                 except Exception as e:
                     errors[index] = e
 
