@@ -35,3 +35,17 @@ class YamlRendererTest(unittest.TestCase):
 
         out = self._render_and_load(f)
         self.assertEqual(out, [{'a':1, 'i':1}, {'b':1}])
+
+    def test_nested_dict_inside_list(self):
+        f = List(
+            Dict({
+                "k1": Dict({
+                    "k2": Any().help(value=True)
+                })
+            })
+        )
+
+        help_str = YamlRenderer().render(f.help_config)
+        # out = self._render_and_load(f)
+        print(help_str)
+        # self.assertEqual(out, [{'a':1, 'i':1}, {'b':1}])
