@@ -5,7 +5,7 @@ from glorpen.config.config import ConfigType, CollectionValueError
 
 
 class UnionType(ConfigType):
-    def as_model(self, data: typing.Any, type, args: typing.Tuple, metadata: dict):
+    def to_model(self, data: typing.Any, type, args: typing.Tuple, metadata: dict):
         if type is typing.Union:
             return self._try_each_type(data, args, metadata=metadata)
 
@@ -28,13 +28,13 @@ class SimpleTypes(ConfigType):
         except Exception as e:
             raise ValueError(e)
 
-    def as_model(self, data: typing.Any, type, args: typing.Tuple, metadata: dict):
+    def to_model(self, data: typing.Any, type, args: typing.Tuple, metadata: dict):
         if type in (int, str, bool, float):
             return self._try_convert(data, type)
 
 
-class SequenceTypes(ConfigType):
-    def as_model(self, data: typing.Any, type, args: typing.Tuple, metadata: dict):
+class CollectionTypes(ConfigType):
+    def to_model(self, data: typing.Any, type, args: typing.Tuple, metadata: dict):
         if type is tuple:
             errors = {}
             ret = []

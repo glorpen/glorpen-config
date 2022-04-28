@@ -20,7 +20,7 @@ class ConfigType(abc.ABC):
         self._converter = converter
 
     @abc.abstractmethod
-    def as_model(self, data: typing.Any, type, args: typing.Tuple, metadata: dict):
+    def to_model(self, data: typing.Any, type, args: typing.Tuple, metadata: dict):
         pass
 
 
@@ -131,7 +131,7 @@ class Config:
 
     def _from_type(self, data: typing.Any, type, args: typing.Tuple, metadata: dict):
         for reg_type in self._registered_types:
-            value = reg_type.as_model(data=data, type=type, args=args, metadata=metadata)
+            value = reg_type.to_model(data=data, type=type, args=args, metadata=metadata)
             if value is not None:
                 return value
 
