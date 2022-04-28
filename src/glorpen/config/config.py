@@ -145,4 +145,4 @@ class Config:
         raise ValueError(f"Could not convert to {type}")
 
     def register_type(self, type_cls: typing.Type[ConfigType]):
-        self._registered_types.append(type_cls(self._as_model))
+        self._registered_types.insert(0, type_cls(self._as_model))
