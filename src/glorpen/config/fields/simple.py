@@ -3,6 +3,7 @@ import pathlib
 import typing
 
 from glorpen.config.config import ConfigType, CollectionValueError
+from glorpen.config.fields.utils import is_class_a_subclass
 
 
 class UnionType(ConfigType):
@@ -83,28 +84,30 @@ class CollectionTypes(ConfigType):
 
 class LiteralType(ConfigType):
     def to_model(self, data: typing.Any, tp, args: typing.Tuple, metadata: dict):
-        if data in args:
-            return data
+        if tp is typing.Literal:
+            if data in args:
+                return data
 
-        raise ValueError("Not one of: " + ', '.join(repr(a) for a in args))
+            raise ValueError("Not one of: " + ', '.join(repr(a) for a in args))
 
 
 class PathType(ConfigType):
     def to_model(self, data: typing.Any, tp, args: typing.Tuple, metadata: dict):
-        p = pathlib.Path(data)
+        if is_class_a_subclass(tp, pathlib.Path):
+            p = pathlib.Path(data)
 
-        try:
-            if metadata.get("expand", False):
-                p = p.expanduser()
-            if metadata.get("absolute", False):
-                p = p.resolve()
-        except RuntimeError as e:
-            raise ValueError(e)
-
-        if metadata.get("existing", False):
             try:
-                p.resolve(True)
-            except OSError as e:
+                if metadata.get("expand", False):
+                    p = p.expanduser()
+                if metadata.get("absolute", False):
+                    p = p.resolve()
+            except RuntimeError as e:
                 raise ValueError(e)
 
-        return p
+            if metadata.get("existing", False):
+                try:
+                    p.resolve(True)
+                except OSError as e:
+                    raise ValueError(e)
+
+            return p
