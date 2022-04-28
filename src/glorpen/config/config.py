@@ -4,6 +4,8 @@ import textwrap
 import types
 import typing
 
+from glorpen.config.validation import Validator
+
 _NoneType = types.NoneType if hasattr(types, "NoneType") else type(None)
 
 
@@ -58,10 +60,15 @@ class Config:
 
     _registered_types: typing.List[ConfigType]
 
-    def __init__(self):
+    def __init__(self, validator: typing.Optional[Validator], types: typing.Iterable[typing.Type[ConfigType]] = None):
         super(Config, self).__init__()
 
         self._registered_types = []
+        self._validator = validator
+
+        if types:
+            for t in types:
+                self.register_type(t)
 
     @classmethod
     def _handle_optional_values(cls, type, default_factory):
@@ -100,17 +107,6 @@ class Config:
         else:
             return None
 
-    @classmethod
-    def _validate_model(cls, model):
-        if hasattr(model, "_validate"):
-            try:
-                model._validate()
-            except AssertionError as e:
-                msg = "Validation failed"
-                if len(e.args) > 0:
-                    msg = str(e)
-                raise ValueError(msg)
-
     def _from_dataclass(self, data: typing.Dict, cls, path: str):
         kwargs = {}
         errors = {}
@@ -125,7 +121,8 @@ class Config:
             raise DictValueError(errors)
 
         instance = cls(**kwargs)
-        self._validate_model(instance)
+        if self._validator:
+            self._validator.validate(instance)
         return instance
 
     def _from_type(self, data: typing.Any, type, args: typing.Tuple, metadata: dict, path: str):
@@ -136,5 +133,5 @@ class Config:
 
         raise ValueError(f"Could not convert to {type}")
 
-    def register(self, type_cls: typing.Type[ConfigType]):
+    def register_type(self, type_cls: typing.Type[ConfigType]):
         self._registered_types.append(type_cls(self))
