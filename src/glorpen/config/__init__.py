@@ -1,7 +1,14 @@
-'''
-.. moduleauthor:: Arkadiusz Dzięgiel <arkadiusz.dziegiel@glorpen.pl>
-'''
-from glorpen.config.translators.base import Translator, Help
-from glorpen.config.config import Config
+import dataclasses
 
-__version__ = "development"
+from glorpen.config.config import Config
+from glorpen.config.fields.simple import UnionType, SimpleTypes, SequenceTypes
+
+
+def default():
+    c = Config()
+    c.register(UnionType)
+    c.register(SimpleTypes)
+    c.register(SequenceTypes)
+
+    return c
+
