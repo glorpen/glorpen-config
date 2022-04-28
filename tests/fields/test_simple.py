@@ -3,8 +3,8 @@ import typing
 
 import pytest
 
-from glorpen.config import Config, SimpleTypes
-from glorpen.config.fields.simple import BooleanType, LiteralType, PathType, CollectionTypes
+from glorpen.config import Config
+from glorpen.config.fields.simple import BooleanType, LiteralType, PathType, CollectionTypes, SimpleTypes
 from glorpen.config.validation import Validator
 
 

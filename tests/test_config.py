@@ -12,6 +12,11 @@ def create_config(types=None):
     return Config(validator=Validator(), types=types)
 
 
+def test_default_import():
+    from glorpen.config import default
+    assert isinstance(default(), Config)
+
+
 class TestConfig:
     def test_not_supported_value_path(self):
         c = create_config()
