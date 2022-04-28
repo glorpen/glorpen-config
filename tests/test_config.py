@@ -5,20 +5,25 @@ import pytest
 
 from glorpen.config.config import Config
 from glorpen.config.fields.simple import SimpleTypes
+from glorpen.config.validation import Validator
+
+
+def create_config(types=None):
+    return Config(validator=Validator(), types=types)
 
 
 class TestConfig:
     def test_not_supported_value_path(self):
-        c = Config()
+        c = create_config()
         with pytest.raises(ValueError, match="Could not convert to"):
             c.to_model("", str)
 
     def test_optional_values(self):
-        c = Config()
+        c = create_config()
         assert c.to_model(None, typing.Optional[str]) is None
 
     def test_default_values(self):
-        c = Config()
+        c = create_config()
 
         @dataclasses.dataclass
         class Data:
@@ -35,15 +40,15 @@ class TestConfig:
         assert m.optional_field is None
 
     def test_validation_with_asserts(self):
-        c = Config()
-        c.register(SimpleTypes)
+        c = create_config()
+        c.register_type(SimpleTypes)
 
         @dataclasses.dataclass
         class Data:
             password: str
             password_repeated: str
 
-            def _validate(self):
+            def validate(self):
                 assert self.password == self.password_repeated, "Bad password"
 
         with pytest.raises(ValueError, match="Bad password"):
@@ -53,12 +58,12 @@ class TestConfig:
             }, Data)
 
     def test_validation_with_exception(self):
-        c = Config()
-        c.register(SimpleTypes)
+        c = create_config()
+        c.register_type(SimpleTypes)
 
         @dataclasses.dataclass
         class Data:
-            def _validate(self):
+            def validate(self):
                 raise ValueError("Bad value")
 
         with pytest.raises(ValueError, match="Bad value"):
