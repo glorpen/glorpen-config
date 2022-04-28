@@ -62,9 +62,10 @@ class CollectionValueError(ValueError):
 class Config:
     """Config validator and normalizer."""
 
+    _validator: typing.Optional[Validator]
     _registered_types: typing.List[ConfigType]
 
-    def __init__(self, validator: typing.Optional[Validator], types: typing.Optional[typing.Iterable[typing.Type[ConfigType]]] = None):
+    def __init__(self, validator: typing.Optional[Validator] = None, types: typing.Optional[typing.Iterable[typing.Type[ConfigType]]] = None):
         super(Config, self).__init__()
 
         self._registered_types = []
