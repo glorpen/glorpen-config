@@ -2,6 +2,11 @@ import logging
 import typing
 
 from glorpen.config.config import ConfigType
+from glorpen.config.fields.utils import is_class_a_subclass
+
+
+class LogLevel(int):
+    pass
 
 
 def _find_levels():
@@ -24,9 +29,10 @@ class LogLevelType(ConfigType):
     _levels = None
 
     def to_model(self, data: typing.Any, tp, args: typing.Tuple, metadata: dict):
-        value = str(data).upper()
+        if is_class_a_subclass(tp, LogLevel):
+            value = str(data).upper()
 
-        if value in _levels.keys():
-            return _levels[value]
-        else:
-            raise ValueError(f"Not one of %r" % _levels.keys())
+            if value in _levels.keys():
+                return _levels[value]
+            else:
+                raise ValueError(f"Not one of %r" % _levels.keys())
