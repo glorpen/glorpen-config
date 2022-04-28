@@ -15,7 +15,7 @@ class ConfigType(abc.ABC):
         self.config = config
 
     @abc.abstractmethod
-    def as_model(self, data: typing.Any, type, args: typing.Tuple, metadata: dict, path: str):
+    def as_model(self, data: typing.Any, type, args: typing.Tuple, metadata: dict):
         pass
 
 
@@ -79,18 +79,18 @@ class Config:
 
         raise ValueError("No value provided")
 
-    def as_model(self, data: typing.Any, type, metadata=None, default_factory=None, path=""):
+    def as_model(self, data: typing.Any, type, metadata=None, default_factory=None):
         if data is None:
             return self._handle_optional_values(type, default_factory)
 
         if dataclasses.is_dataclass(type):
-            return self._from_dataclass(data, type, path=path)
+            return self._from_dataclass(data, type)
         else:
             origin = typing.get_origin(type)
             if origin is None:
-                return self._from_type(data=data, type=type, args=(), metadata=metadata, path=path)
+                return self._from_type(data=data, type=type, args=(), metadata=metadata)
             else:
-                return self._from_type(data=data, type=origin, args=typing.get_args(type), metadata=metadata, path=path)
+                return self._from_type(data=data, type=origin, args=typing.get_args(type), metadata=metadata)
 
     def to_model(self, data, cls):
         try:
@@ -107,13 +107,13 @@ class Config:
         else:
             return None
 
-    def _from_dataclass(self, data: typing.Dict, cls, path: str):
+    def _from_dataclass(self, data: typing.Dict, cls):
         kwargs = {}
         errors = {}
         for field in dataclasses.fields(cls):
             try:
                 kwargs[field.name] = self.as_model(data.get(field.name), field.type, metadata=field.metadata,
-                    default_factory=self._get_default_factory(field), path=f"{path}.{field.name}")
+                    default_factory=self._get_default_factory(field))
             except ValueError as e:
                 errors[field.name] = e
 
@@ -125,9 +125,9 @@ class Config:
             self._validator.validate(instance)
         return instance
 
-    def _from_type(self, data: typing.Any, type, args: typing.Tuple, metadata: dict, path: str):
+    def _from_type(self, data: typing.Any, type, args: typing.Tuple, metadata: dict):
         for reg_type in self._registered_types:
-            value = reg_type.as_model(data=data, type=type, args=args, metadata=metadata, path=path)
+            value = reg_type.as_model(data=data, type=type, args=args, metadata=metadata)
             if value is not None:
                 return value
 

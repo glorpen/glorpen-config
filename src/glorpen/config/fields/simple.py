@@ -5,15 +5,15 @@ from glorpen.config.config import ConfigType, DictValueError
 
 
 class UnionType(ConfigType):
-    def as_model(self, data: typing.Any, type, args: typing.Tuple, metadata: dict, path: str):
+    def as_model(self, data: typing.Any, type, args: typing.Tuple, metadata: dict):
         if type is typing.Union:
-            return self._try_each_type(data, args, metadata=metadata, path=path)
+            return self._try_each_type(data, args, metadata=metadata)
 
-    def _try_each_type(self, data, types, path: str, metadata=None):
+    def _try_each_type(self, data, types, metadata=None):
         errors = []
         for tp in types:
             try:
-                return self.config.as_model(data, tp, metadata=metadata, path=path)
+                return self.config.as_model(data, tp, metadata=metadata)
             except ValueError as e:
                 errors.append(e)
 
@@ -28,20 +28,20 @@ class SimpleTypes(ConfigType):
         except Exception as e:
             raise ValueError(e)
 
-    def as_model(self, data: typing.Any, type, args: typing.Tuple, metadata: dict, path: str):
+    def as_model(self, data: typing.Any, type, args: typing.Tuple, metadata: dict):
         if type in (int, str, bool, float):
             return self._try_convert(data, type)
 
 
 class SequenceTypes(ConfigType):
-    def as_model(self, data: typing.Any, type, args: typing.Tuple, metadata: dict, path: str):
+    def as_model(self, data: typing.Any, type, args: typing.Tuple, metadata: dict):
         if type is tuple:
             errors = {}
             ret = []
 
             for index, (tp, value) in enumerate(itertools.zip_longest(args, data)):
                 try:
-                    ret.append(self.config.as_model(value, tp, path=f"{path}.{index}"))
+                    ret.append(self.config.as_model(value, tp))
                 except Exception as e:
                     errors[index] = e
 
