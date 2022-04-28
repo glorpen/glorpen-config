@@ -1,4 +1,5 @@
 import itertools
+import pathlib
 import typing
 
 from glorpen.config.config import ConfigType, CollectionValueError
@@ -25,13 +26,36 @@ class SimpleTypes(ConfigType):
     def _try_convert(cls, data, conv):
         try:
             return conv(data)
+        except ValueError:
+            raise
         except Exception as e:
-            raise ValueError(e)
+            raise ValueError(f"{e.__class__.__name__}: {e}")
 
     def to_model(self, data: typing.Any, type, args: typing.Tuple, metadata: dict):
-        if type in (int, str, bool, float):
+        if type in (int, str, float):
             return self._try_convert(data, type)
 
+
+class BooleanType(ConfigType):
+    _truthful = [
+        "true",
+        "t",
+        1,
+        "y",
+        "yes",
+        "on",
+        "enable",
+        True
+    ]
+
+    def to_model(self, data: typing.Any, type, args: typing.Tuple, metadata: dict):
+        if type is bool:
+            if isinstance(data, str):
+                data = data.lower()
+            return self.is_truthful(data)
+
+    def is_truthful(self, value):
+        return value in self._truthful
 
 class CollectionTypes(ConfigType):
     def to_model(self, data: typing.Any, type, args: typing.Tuple, metadata: dict):
@@ -46,7 +70,7 @@ class CollectionTypes(ConfigType):
                     errors[index] = e
 
             for i in range(len(args), len(data)):
-                errors[i+1] = ValueError("Extra value")
+                errors[i + 1] = ValueError("Extra value")
 
             if errors:
                 raise CollectionValueError(errors)
@@ -117,24 +141,6 @@ class CollectionTypes(ConfigType):
 #         return normalized_value.value
 #     def normalize(self, raw_value):
 #         return SingleValue(raw_value, self)
-#
-# class Bool(Field):
-#     truthful = [
-#         "true",
-#         "True",
-#         "t",
-#         1,
-#         "y",
-#         "yes",
-#         "on",
-#         True
-#     ]
-#     def is_value_supported(self, raw_value):
-#         return True
-#     def normalize(self, raw_value):
-#         return SingleValue(raw_value in self.truthful, self)
-#     def create_packed_value(self, normalized_value):
-#         return normalized_value.value
 #
 # class Choice(Field):
 #     def __init__(self, choices):
