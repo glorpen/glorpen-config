@@ -116,13 +116,17 @@ class Config:
     def _from_dataclass(self, data: typing.Dict, cls):
         kwargs = {}
         errors = {}
-        # TODO: error on when more fields are provided
+        known_fields = set()
         for field in dataclasses.fields(cls):
+            known_fields.add(field.name)
             try:
                 kwargs[field.name] = self._as_model(data.get(field.name), field.type, metadata=field.metadata,
                     default_factory=self._get_default_factory(field))
             except ValueError as e:
                 errors[field.name] = e
+
+        for extra_field in set(data.keys()).difference(known_fields):
+            errors[extra_field] = ValueError("Extra field")
 
         if errors:
             raise CollectionValueError(errors)

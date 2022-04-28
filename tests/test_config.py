@@ -39,6 +39,17 @@ class TestConfig:
         assert m.value_field == "default-value"
         assert m.optional_field is None
 
+    def test_too_many_properties(self):
+        c = create_config()
+        c.register_type(SimpleTypes)
+
+        @dataclasses.dataclass
+        class Data:
+            a_prop: str
+
+        with pytest.raises(ValueError, match="Extra field"):
+            c.to_model({"a_prop": "asd", "test": "test"}, Data)
+
     def test_validation_with_asserts(self):
         c = create_config()
         c.register_type(SimpleTypes)
