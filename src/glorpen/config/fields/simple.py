@@ -3,19 +3,19 @@ import pathlib
 import typing
 
 from glorpen.config.config import ConfigType, CollectionValueError
-from glorpen.config.fields.utils import is_class_a_subclass
+from glorpen.config.model import schema
 
 
 class UnionType(ConfigType):
-    def to_model(self, data: typing.Any, tp, args: typing.Tuple, metadata: dict):
-        if tp is typing.Union:
-            return self._try_each_type(data, args, metadata=metadata)
+    def to_model(self, data: typing.Any, model: schema.Field):
+        if model.type is typing.Union:
+            return self._try_each_type(data, model.args)
 
-    def _try_each_type(self, data, types, metadata=None):
+    def _try_each_type(self, data, types):
         errors = []
         for tp in types:
             try:
-                return self._converter(data, tp, metadata=metadata)
+                return self._converter(data, tp)
             except ValueError as e:
                 errors.append(e)
 
@@ -32,10 +32,10 @@ class SimpleTypes(ConfigType):
         except Exception as e:
             raise ValueError(f"{e.__class__.__name__}: {e}")
 
-    def to_model(self, data: typing.Any, tp, args: typing.Tuple, metadata: dict):
-        if tp in (int, str, float, list):
-            return self._try_convert(data, tp)
-        if tp is typing.Any:
+    def to_model(self, data: typing.Any, model: schema.Field):
+        if model.type in (int, str, float, list):
+            return self._try_convert(data, model.type)
+        if model.type is typing.Any:
             return data
 
 
@@ -51,8 +51,8 @@ class BooleanType(ConfigType):
         True
     ]
 
-    def to_model(self, data: typing.Any, tp, args: typing.Tuple, metadata: dict):
-        if tp is bool:
+    def to_model(self, data: typing.Any, model: schema.Field):
+        if model.type is bool:
             if isinstance(data, str):
                 data = data.lower()
             return self.is_truthful(data)
@@ -62,18 +62,18 @@ class BooleanType(ConfigType):
 
 
 class CollectionTypes(ConfigType):
-    def to_model(self, data: typing.Any, tp, args: typing.Tuple, metadata: dict):
-        if tp is tuple:
+    def to_model(self, data: typing.Any, model: schema.Field):
+        if model.type is tuple:
             errors = {}
             ret = []
 
-            for index, (tp, value) in enumerate(itertools.zip_longest(args, data)):
+            for index, (field, value) in enumerate(itertools.zip_longest(model.args, data)):
                 try:
-                    ret.append(self._converter(value, tp))
+                    ret.append(self._converter(value, field))
                 except Exception as e:
                     errors[index] = e
 
-            for i in range(len(args), len(data)):
+            for i in range(len(model.args), len(data)):
                 errors[i + 1] = ValueError("Extra value")
 
             if errors:
@@ -83,28 +83,28 @@ class CollectionTypes(ConfigType):
 
 
 class LiteralType(ConfigType):
-    def to_model(self, data: typing.Any, tp, args: typing.Tuple, metadata: dict):
-        if tp is typing.Literal:
-            if data in args:
+    def to_model(self, data: typing.Any, model: schema.Field):
+        if model.type is typing.Literal:
+            if model.has_arg_with_type(data):
                 return data
 
-            raise ValueError("Not one of: " + ', '.join(repr(a) for a in args))
+            raise ValueError("Not one of: " + ', '.join(repr(a) for a in model.args))
 
 
 class PathType(ConfigType):
-    def to_model(self, data: typing.Any, tp, args: typing.Tuple, metadata: dict):
-        if is_class_a_subclass(tp, pathlib.Path):
+    def to_model(self, data: typing.Any, model: schema.Field):
+        if model.is_type_subclass(pathlib.Path):
             p = pathlib.Path(data)
 
             try:
-                if metadata.get("expand", False):
+                if model.options.get("expand", False):
                     p = p.expanduser()
-                if metadata.get("absolute", False):
+                if model.options.get("absolute", False):
                     p = p.resolve()
             except RuntimeError as e:
                 raise ValueError(e)
 
-            if metadata.get("existing", False):
+            if model.options.get("existing", False):
                 try:
                     p.resolve(True)
                 except OSError as e:

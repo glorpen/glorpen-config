@@ -12,10 +12,19 @@ class Field:
     default_factory: typing.Optional[typing.Callable] = None
     doc: typing.Optional[str] = None
 
+    def has_arg_with_type(self, data):
+        for arg in self.args:
+            if data is arg.type:
+                return True
+        return False
+
+    def is_type_subclass(self, class_or_tuple):
+        return isinstance(self.type, type) and issubclass(self.type, class_or_tuple)
+
 
 class Schema:
-    def normalize(self, tp):
-        return self._any_to_field(tp, {})
+    def generate(self, tp, options=None):
+        return self._any_to_field(tp, options or {})
 
     def _any_to_field(self, tp, options: FieldOptions):
         if dataclasses.is_dataclass(tp):

@@ -2,7 +2,7 @@ import logging
 import typing
 
 from glorpen.config.config import ConfigType
-from glorpen.config.fields.utils import is_class_a_subclass
+from glorpen.config.model.schema import Field
 
 
 class LogLevel(int):
@@ -28,8 +28,8 @@ class LogLevelType(ConfigType):
 
     _levels = None
 
-    def to_model(self, data: typing.Any, tp, args: typing.Tuple, metadata: dict):
-        if is_class_a_subclass(tp, LogLevel):
+    def to_model(self, data: typing.Any, model: Field):
+        if model.is_type_subclass(LogLevel):
             value = str(data).upper()
 
             if value in _levels.keys():

@@ -17,11 +17,11 @@ class Dummy:
 
 
 def test_docs():
-    p = Schema().normalize(Dummy)
+    p = Schema().generate(Dummy)
     assert p.doc == "class doc"
     assert p.args["a_field"].doc == "field doc"
 
 
 def test_options_are_inherited_only_by_types():
-    p = Schema().normalize(Dummy)
+    p = Schema().generate(Dummy)
     assert p.args['a_field'].args[1].args["a_field"].options == {}

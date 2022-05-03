@@ -5,11 +5,12 @@ import pytest
 
 from glorpen.config import Config
 from glorpen.config.fields.simple import BooleanType, LiteralType, PathType, CollectionTypes, SimpleTypes
+from glorpen.config.model.schema import Schema
 from glorpen.config.validation import Validator
 
 
 def create_config(types=None):
-    return Config(validator=Validator(), types=types)
+    return Config(schema=Schema(), validator=Validator(), types=types)
 
 
 class Dummy:

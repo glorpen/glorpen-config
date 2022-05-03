@@ -5,11 +5,12 @@ import pytest
 
 from glorpen.config.config import Config
 from glorpen.config.fields.simple import SimpleTypes
+from glorpen.config.model.schema import Schema
 from glorpen.config.validation import Validator
 
 
 def create_config(types=None):
-    return Config(validator=Validator(), types=types)
+    return Config(schema=Schema(), validator=Validator(), types=types)
 
 
 def test_default_import():
