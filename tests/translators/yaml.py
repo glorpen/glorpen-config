@@ -43,3 +43,15 @@ line2
 line3"""
 
     assert render(Dummy) == "# field: |-\n#        line1\n#        line2\n#        line3\n"
+
+
+def test_nested_fields():
+    @dataclasses.dataclass
+    class Dummy2:
+        field: str
+
+    @dataclasses.dataclass
+    class Dummy1:
+        field: Dummy2
+
+    assert render(Dummy1) == "field:\n  field: # required str\n"

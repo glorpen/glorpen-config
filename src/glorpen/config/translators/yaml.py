@@ -13,6 +13,8 @@ def list_indent(items: typing.Iterable[str], prefix):
 
 class YamlRenderer:
 
+    _indent_size = 2
+
     def __init__(self):
         super(YamlRenderer, self).__init__()
 
@@ -32,9 +34,15 @@ class YamlRenderer:
             value = list(self._render(field))
             key = f"{name}: "
             prefix = "# " if field.default_factory else ""
-            yield prefix + key + value[0]
-            for line in list_indent(value[1:], " " * len(key)):
-                yield prefix + line
+
+            if isinstance(field.args, dict):
+                yield prefix + key.rstrip()
+                for line in list_indent(value, " " * self._indent_size):
+                    yield prefix + line
+            else:
+                yield prefix + key + value[0]
+                for line in list_indent(value[1:], " " * len(key)):
+                    yield prefix + line
 
     def _render_value(self, model: Field):
         if model.is_nullable():
