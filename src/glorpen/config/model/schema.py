@@ -22,6 +22,8 @@ class Field:
         return isinstance(self.type, type) and issubclass(self.type, class_or_tuple)
 
 
+# TODO: ForwardRef
+
 class Schema:
     def generate(self, tp, options=None):
         return self._any_to_field(tp, options or {})

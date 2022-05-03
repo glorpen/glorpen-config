@@ -3,19 +3,19 @@ import typing
 
 import pytest
 
-from glorpen.config.config import Config
 from glorpen.config.fields.simple import SimpleTypes
 from glorpen.config.model.schema import Schema
+from glorpen.config.model.transformer import Transformer
 from glorpen.config.validation import Validator
 
 
 def create_config(types=None):
-    return Config(schema=Schema(), validator=Validator(), types=types)
+    return Transformer(schema=Schema(), validator=Validator(), types=types)
 
 
 def test_default_import():
     from glorpen.config import default
-    assert isinstance(default(), Config)
+    assert isinstance(default(), Transformer)
 
 
 class TestConfig:
@@ -69,10 +69,12 @@ class TestConfig:
                 assert self.password == self.password_repeated, "Bad password"
 
         with pytest.raises(ValueError, match="Bad password"):
-            c.to_model({
-                "password": "test1",
-                "password_repeated": "test2"
-            }, Data)
+            c.to_model(
+                {
+                    "password": "test1",
+                    "password_repeated": "test2"
+                }, Data
+            )
 
     def test_validation_with_exception(self):
         c = create_config()

@@ -1,6 +1,7 @@
 import contextlib
 
-from glorpen.config.config import Config
+from glorpen.config.model.transformer import Transformer
+from glorpen.config.model.schema import Schema
 from glorpen.config.validation import Validator
 
 
@@ -12,8 +13,8 @@ def _try_import():
         return
 
 
-def default(validator: Validator = None):
-    c = Config(validator or Validator())
+def default(schema: Schema = None, validator: Validator = None):
+    c = Transformer(schema or Schema(), validator or Validator())
 
     from glorpen.config.fields.simple import UnionType, SimpleTypes, CollectionTypes, BooleanType, PathType, LiteralType
 

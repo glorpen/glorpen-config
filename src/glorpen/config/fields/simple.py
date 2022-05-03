@@ -2,7 +2,7 @@ import itertools
 import pathlib
 import typing
 
-from glorpen.config.config import ConfigType, CollectionValueError
+from glorpen.config.model.transformer import ConfigType, CollectionValueError
 from glorpen.config.model import schema
 
 

@@ -1,12 +1,12 @@
 import logging
 
-from glorpen.config import Config
-from glorpen.config.fields.log import LogLevelType, LogLevel
+from glorpen.config.fields.log import LogLevel, LogLevelType
 from glorpen.config.model.schema import Schema
+from glorpen.config.model.transformer import Transformer
 
 
-def create_config() -> Config:
-    return Config(schema=Schema(), types=[LogLevelType])
+def create_config() -> Transformer:
+    return Transformer(schema=Schema(), types=[LogLevelType])
 
 
 def test_level():

@@ -3,14 +3,14 @@ import typing
 
 import pytest
 
-from glorpen.config import Config
-from glorpen.config.fields.simple import BooleanType, LiteralType, PathType, CollectionTypes, SimpleTypes
+from glorpen.config.fields.simple import BooleanType, CollectionTypes, LiteralType, PathType, SimpleTypes
 from glorpen.config.model.schema import Schema
+from glorpen.config.model.transformer import Transformer
 from glorpen.config.validation import Validator
 
 
 def create_config(types=None):
-    return Config(schema=Schema(), validator=Validator(), types=types)
+    return Transformer(schema=Schema(), validator=Validator(), types=types)
 
 
 class Dummy:

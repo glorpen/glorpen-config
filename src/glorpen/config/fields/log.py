@@ -1,7 +1,7 @@
 import logging
 import typing
 
-from glorpen.config.config import ConfigType
+from glorpen.config.model.transformer import ConfigType
 from glorpen.config.model.schema import Field
 
 
