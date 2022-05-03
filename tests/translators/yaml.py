@@ -1,51 +1,46 @@
-import unittest
-import yaml
+import dataclasses
+import typing
 
-from glorpen.config.fields.simple import Dict, List, Any, Variant
+from glorpen.config import Schema
 from glorpen.config.translators.yaml import YamlRenderer
 
-class YamlRendererTest(unittest.TestCase):
 
-    def _render_and_load(self, f):
-        help_str = YamlRenderer().render(f.help_config)
-        return yaml.safe_load(help_str)
-    
-    def test_dict_nested_in_list(self):
-        f = Dict({
-            "a-dict": List(
-                Dict({'a':Any().help(value=1), 'i':Any().help(value=1)}),
-            )
-        })
-
-        out = self._render_and_load(f)
-        self.assertEqual(out, {'a-dict':[{'a': 1, 'i': 1}]})
-    
-    def test_dict_with_first_list_item(self):
-        f = List(Any().help(value="test"))
-        out = self._render_and_load(f)
-        self.assertEqual(out, ['test'])
-
-    def test_alternative_nested_lists(self):
-        f = List(
-            Variant([
-                Dict({'a':Any().help(value=1), 'i':Any().help(value=1)}),
-                Dict({'b':Any().help(value=1)}),
-            ])
+def test_asd():
+    @dataclasses.dataclass
+    class Dummy:
+        comment_field: str = dataclasses.field(metadata={"doc": "some string value"})
+        required_field: str
+        nullable_field: typing.Optional[str]
+        optional_field: str = dataclasses.field(default="test1")
+        optional_comment_field: str = dataclasses.field(
+            default="test2", metadata={"doc": """some multiline
+                                                 string value"""
+                                       }
         )
 
-        out = self._render_and_load(f)
-        self.assertEqual(out, [{'a':1, 'i':1}, {'b':1}])
+    r = YamlRenderer()
 
-    def test_nested_dict_inside_list(self):
-        f = List(
-            Dict({
-                "k1": Dict({
-                    "k2": Any().help(value=True)
-                })
-            })
-        )
+    model = Schema().generate(Dummy)
+    assert r.render(model) == """# some string value
+comment_field: # required str
+required_field: # required str
+nullable_field: ~
+# optional_field: test1
+# some multiline
+# string value
+# optional_comment_field: test2
+"""
 
-        help_str = YamlRenderer().render(f.help_config)
-        # out = self._render_and_load(f)
-        print(help_str)
-        # self.assertEqual(out, [{'a':1, 'i':1}, {'b':1}])
+
+def test_multiline_defaults():
+    @dataclasses.dataclass
+    class Dummy:
+        field: str = """line1
+line2
+line3"""
+
+    model = Schema().generate(Dummy)
+    r = YamlRenderer()
+    data = r.render(model)
+
+    assert data == "# field: |-\n#        line1\n#        line2\n#        line3\n"

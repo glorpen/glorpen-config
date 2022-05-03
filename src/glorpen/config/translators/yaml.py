@@ -1,146 +1,53 @@
-import yaml
 import textwrap
-import itertools
-from glorpen.config.translators.base import Renderer, Reader
-from io import StringIO
+import typing
 
-# TODO: comment all but first variants, key alternatives
-# TODO: comment char at line start?
+import yaml
 
-class YamlRenderer(Renderer):
-    def reset(self):
-        self._data = StringIO()
-        self._key = []
-        self._value_prefix = []
-        self._first_list_item = False
-        self._parent_containers = []
+from glorpen.config.model.schema import Field
 
-    def finish(self):
-        ret = self._data.getvalue()
-        self._data.close()
-        return ret
 
-    def padding(self, diff = 0):
-        return " " * ((len(self._key) + diff) * 2)
-    
-    def render_value(self, value):
-        ret_v = yaml.dump(value, explicit_start=False, explicit_end=False).strip()
-        if ret_v.endswith("\n..."):
-            ret_v = ret_v[:-4].strip()
-        return ret_v
-    
-    def render_key(self, k):
-        if k is None:
-            return '- '
+def list_indent(items: typing.Iterable[str], prefix):
+    for item in items:
+        yield f"{prefix}{item}"
+
+
+class YamlRenderer:
+
+    def __init__(self):
+        super(YamlRenderer, self).__init__()
+
+    def render(self, model: Field):
+        return "\n".join(list(self._render(model))) + "\n"
+
+    def _render(self, model: Field):
+        if isinstance(model.args, dict):
+            yield from self._render_dict(model.args)
         else:
-            return f'{k}: '
+            yield from self._render_value(model)
 
-    def render_current_parent_key(self):
-        return self.render_key(self._key[-1])
-    
-    def get_current_keys_until_main_list_start(self):
-        ret = list(reversed(list(itertools.takewhile(lambda x: x is None, reversed(self._key[0:-1])))))
-        if ret:
-            ret.append(self._key[-1])
-        else:
-            if len(self._key) > 0 and self._key[-1] is None:
-                ret.append(None)
+    def _render_dict(self, fields: typing.Dict[str, Field]):
+        for name, field in fields.items():
+            if field.doc:
+                yield from list_indent(textwrap.wrap(field.doc, width=60), "# ")
+            value = list(self._render(field))
+            key = f"{name}: "
+            prefix = "# " if field.default_factory else ""
+            yield prefix + key + value[0]
+            for line in list_indent(value[1:], " " * len(key)):
+                yield prefix + line
 
-        return ret
-    
-    def get_current_container(self):
-        return self._parent_containers[-1] if self._parent_containers else None
-
-    def render_value_as_variant(self, value, comment=''):
-        z = -1
-        # when in nested list item, parent key list is on same line
-        if self._first_list_item:
-            # it could be nested list or hash in a list
-            # so handle laying multiple keys in one line
-            keys = self.get_current_keys_until_main_list_start()
-            keys_prefix = "".join(self.render_key(i) for i in keys)
-            z = z - len(keys) + 1
-        else:
-            keys_prefix = self.render_current_parent_key()
-
-        return self.padding(z) + keys_prefix + self.render_value(value) + comment + '\n'
-
-
-    def visit_node(self, node):
-        if hasattr(node, "description"):
-            self._data.write(self.padding(-1) + f"# {node.description}\n")
-    
-    def visit_variant(self, variant, node):
-        if variant.has_description:
-            self._data.write(self.padding(-1) + f"# {variant.description}" + "\n")
-        
-        if variant.has_value:
-            value = variant.value
-            comment = ''
-        else:
-            value = 'something'
-            comment = ' # required and no default'
-        
-        self._data.write(self.render_value_as_variant(value, comment))
-    
-    def leave_variant(self, variant, node):
-        self._first_list_item = False
-
-    def visit_node_variants(self, node):
-        if not node.variants:
-            parent = self.get_current_container()
-            if parent and parent.has_value:
-                self._data.write(self.render_value_as_variant(parent.value))
+    def _render_value(self, model: Field):
+        if model.is_nullable():
+            yield "~"
+        elif model.default_factory:
+            msg = yaml.safe_dump(model.default_factory(), default_style='|')
+            if msg.endswith("\n...\n"):
+                msg = msg[:-5]
+            lines = msg.splitlines(keepends=False)
+            if lines[0] == "|-" and len(lines) == 2:
+                yield lines[1].lstrip()
             else:
-                self._data.write(self.render_value_as_variant('something', ' # required and no default'))
-
-    def leave_node_variants(self, node):
-        # when no variants exist in this node
-        self._first_list_item = False
-
-    def visit_item_hash(self, k, node):
-        self._key.append(k)
-
-    def leave_item_hash(self, k, node):
-        self._key.pop()
-
-    def visit_item_list(self, node):
-        self._key.append(None)
-    
-    def leave_item_list(self, node):
-        self._key.pop()
-        self._first_list_item = False
-    
-    def visit_container(self, node):
-        self._parent_containers.append(node)
-    
-    def leave_container(self, node):
-        self._parent_containers.pop()
-    
-    def visit_container_list(self, node):
-        self._first_list_item = True
-        if self._key and self._key[-1] is not None:
-            self._data.write(self.padding(-1) + self.render_current_parent_key() + "\n")
-    
-    def visit_container_hash(self, node):
-        if self._key and self._key[-1] is not None:
-            self._data.write(self.padding(-1) + self.render_current_parent_key() + "\n")
-    
-    def visit_item_alternative(self, node):
-        # if alternatives parent is a list, treat each child as new list entry
-        if self._parent_containers[-2].are_children_list:
-            self._first_list_item = True
-
-    # def visit_any(self, tag, node, *args):
-    #     self._data.write(f"<{tag}>\n")
-    # def leave_any(self, tag, node, *args):
-    #     self._data.write(f"</{tag}>\n")
-
-class YamlReader(Reader):
-    def __init__(self, path):
-        super().__init__()
-        self.path = path
-    
-    def read(self):
-        with open(self.path, "rt") as f:
-            return yaml.safe_load(f.read())
+                yield lines[0]
+                yield from textwrap.dedent("\n".join(lines[1:])).splitlines(keepends=False)
+        else:
+            yield f"# required {model.type.__name__}"
