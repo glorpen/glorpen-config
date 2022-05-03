@@ -1,13 +1,10 @@
 import abc
 import dataclasses
 import textwrap
-import types
 import typing
 
 from glorpen.config.model.schema import Field, Schema
 from glorpen.config.validation import Validator
-
-_NoneType = types.NoneType if hasattr(types, "NoneType") else type(None)
 
 
 class DataConverter(typing.Protocol):
@@ -81,9 +78,7 @@ class Transformer:
 
     @classmethod
     def _handle_optional_values(cls, model: Field):
-        if model.type is _NoneType:
-            return None
-        if model.type is typing.Union and model.has_arg_with_type(_NoneType):
+        if model.is_nullable():
             return None
         if model.default_factory:
             return model.default_factory()

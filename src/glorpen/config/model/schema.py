@@ -1,7 +1,10 @@
 import dataclasses
+import types
 import typing
 
 FieldOptions = typing.Dict[str, typing.Any]
+
+NoneType = types.NoneType if hasattr(types, "NoneType") else type(None)
 
 
 @dataclasses.dataclass
@@ -21,11 +24,21 @@ class Field:
     def is_type_subclass(self, class_or_tuple):
         return isinstance(self.type, type) and issubclass(self.type, class_or_tuple)
 
+    def is_nullable(self):
+        if self.type is NoneType:
+            return True
+        if self.type is typing.Union and self.has_arg_with_type(NoneType):
+            return True
+        return False
+
+    def is_optional(self):
+        return self.is_nullable() or self.default_factory
+
 
 # TODO: ForwardRef
 
 class Schema:
-    def generate(self, tp, options=None):
+    def generate(self, tp, options=None) -> Field:
         return self._any_to_field(tp, options or {})
 
     def _any_to_field(self, tp, options: FieldOptions):

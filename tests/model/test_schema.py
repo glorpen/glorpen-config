@@ -25,3 +25,19 @@ def test_docs():
 def test_options_are_inherited_only_by_types():
     p = Schema().generate(Dummy)
     assert p.args['a_field'].args[1].args["a_field"].options == {}
+
+
+def test_optionals():
+    @dataclasses.dataclass
+    class Dummy:
+        noop_field: str = dataclasses.field()
+        required_field: str
+        optional_field: str = dataclasses.field(default="test1")
+        optional_literal_field: str = "test2"
+
+    p = Schema().generate(Dummy)
+
+    assert not p.args["noop_field"].is_optional()
+    assert not p.args["required_field"].is_optional()
+    assert p.args["optional_field"].is_optional()
+    assert p.args["optional_literal_field"].is_optional()
